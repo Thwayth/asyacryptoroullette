@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
+
     <meta charset="UTF-8">
 
     <meta
@@ -8,54 +10,105 @@
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     >
 
-    <title>ASYA ROULETTE</title>
+    <meta
+        name="theme-color"
+        content="#0a070b"
+    >
+
+    <title>ASYA CRYPTO ROULETTE</title>
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-    <link rel="stylesheet" href="/style.css">
+    <link
+        rel="stylesheet"
+        href="/style.css"
+    >
+
 </head>
+
 
 <body>
 
 <div class="app">
 
-    <!-- HOME -->
 
-    <section id="homeScreen" class="screen active">
+    <!-- =================================================
+         HOME
+    ================================================== -->
+
+    <section
+        id="homeScreen"
+        class="screen active"
+    >
+
 
         <div class="brand">
 
-            <div class="brand-icon">♡</div>
 
-            <div class="brand-title">
-                <span>ASYA</span>
-                <strong>ROULETTE</strong>
+            <div class="brand-icon">
+                ♡
             </div>
 
+
+            <div class="brand-title">
+
+                <span>
+                    ASYA
+                </span>
+
+                <strong>
+                    CRYPTO
+                </strong>
+
+                <strong>
+                    ROULETTE
+                </strong>
+
+            </div>
+
+
             <p>
-                Испытай удачу и забери свой подарок ✦
+                Испытай удачу и получи ценный приз
             </p>
 
         </div>
 
 
+
+        <!-- =================================================
+             PRIZES
+        ================================================== -->
+
         <div class="prizes">
 
-            <div class="prize-card jackpot">
-                <div class="prize-icon">💸</div>
 
-                <div class="prize-name">$1,000</div>
+            <div class="prize-card money">
 
-                <div class="prize-description">
-                    Главный денежный приз
+                <div class="prize-icon">
+                    💵
                 </div>
 
-                <div class="chance">12%</div>
+                <div class="prize-name">
+                    $1,000
+                </div>
+
+                <div class="prize-description">
+                    Денежный приз
+                </div>
+
+                <div class="prize-chance">
+                    12%
+                </div>
+
             </div>
 
 
+
             <div class="prize-card tools">
-                <div class="prize-icon">🛠️</div>
+
+                <div class="prize-icon">
+                    🛠️
+                </div>
 
                 <div class="prize-name">
                     ИНСТРУМЕНТЫ
@@ -65,78 +118,129 @@
                     Для трейдинга
                 </div>
 
-                <div class="chance">28%</div>
+                <div class="prize-chance">
+                    28%
+                </div>
+
             </div>
+
 
 
             <div class="prize-card setup">
-                <div class="prize-icon">🔥</div>
+
+                <div class="prize-icon">
+                    💎
+                </div>
 
                 <div class="prize-name">
-                    ИНСАЙДЕРСКИЙ
+                    ИНСАЙДЕРСКИЙ СЕТАП
                 </div>
 
                 <div class="prize-description">
-                    Сетап
+                    Торговый сетап
                 </div>
 
-                <div class="chance">20%</div>
+                <div class="prize-chance">
+                    20%
+                </div>
+
             </div>
 
 
-            <div class="prize-card indicator">
-                <div class="prize-icon">📊</div>
+
+            <div class="prize-card signal">
+
+                <div class="prize-icon">
+                    📈
+                </div>
 
                 <div class="prize-name">
-                    ИНДИКАТОР
+                    СИГНАЛ
                 </div>
 
                 <div class="prize-description">
-                    Для трейдинга
+                    Торговый сигнал
                 </div>
 
-                <div class="chance">40%</div>
+                <div class="prize-chance">
+                    40%
+                </div>
+
             </div>
+
 
         </div>
 
 
-        <button id="spinButton" class="primary-button">
-            <span>♡</span>
+
+        <!-- =================================================
+             SPIN BUTTON
+        ================================================== -->
+
+        <button
+            id="spinButton"
+            class="primary-button"
+        >
+
+            <span>
+                ♡
+            </span>
+
             КРУТИТЬ РУЛЕТКУ
+
         </button>
 
 
+
         <div class="footer-note">
-            ✦ ASYA CRYPTO ✦
+
+            ASYA CRYPTO
+            <span>•</span>
+            ROULETTE
+
         </div>
+
 
     </section>
 
 
-    <!-- ROULETTE -->
 
-    <section id="rouletteScreen" class="screen">
+    <!-- =================================================
+         ROULETTE
+    ================================================== -->
+
+    <section
+        id="rouletteScreen"
+        class="screen"
+    >
+
 
         <div class="screen-header">
 
-            <button id="backButton" class="back-button">
+
+            <button
+                id="backButton"
+                class="back-button"
+            >
                 ‹
             </button>
+
 
             <div>
 
                 <div class="header-title">
-                    ASYA ROULETTE
+                    ASYA CRYPTO
                 </div>
 
                 <div class="header-subtitle">
-                    Пусть сегодня повезёт ♡
+                    Удачи ♡
                 </div>
 
             </div>
 
+
         </div>
+
 
 
         <div class="roulette-title">
@@ -144,24 +248,103 @@
         </div>
 
 
+
+        <!-- =================================================
+             WHEEL
+        ================================================== -->
+
         <div class="roulette-wrapper">
 
-            <div class="pointer"></div>
 
-            <div id="wheel" class="wheel">
+            <div class="pointer">
+                ▼
+            </div>
+
+
+            <div
+                id="wheel"
+                class="wheel"
+            >
+
+
+                <!--
+                    4 визуальных сектора.
+                    Фактический результат определяется
+                    сервером.
+                -->
+
+
+                <div class="wheel-sector sector-money">
+
+                    <span>
+                        💵
+                    </span>
+
+                    <small>
+                        $1,000
+                    </small>
+
+                </div>
+
+
+                <div class="wheel-sector sector-tools">
+
+                    <span>
+                        🛠️
+                    </span>
+
+                    <small>
+                        ИНСТРУМЕНТЫ
+                    </small>
+
+                </div>
+
+
+                <div class="wheel-sector sector-setup">
+
+                    <span>
+                        💎
+                    </span>
+
+                    <small>
+                        СЕТАП
+                    </small>
+
+                </div>
+
+
+                <div class="wheel-sector sector-signal">
+
+                    <span>
+                        📈
+                    </span>
+
+                    <small>
+                        СИГНАЛ
+                    </small>
+
+                </div>
+
 
                 <div class="wheel-center">
                     ♡
                 </div>
 
+
             </div>
 
+
         </div>
 
 
-        <div id="spinStatus" class="spin-status">
-            Готова испытать удачу?
+
+        <div
+            id="spinStatus"
+            class="spin-status"
+        >
+            Готовы?
         </div>
+
 
 
         <div class="progress-container">
@@ -173,32 +356,43 @@
 
         </div>
 
+
     </section>
 
 
-    <!-- RESULT -->
 
-    <section id="resultScreen" class="screen">
+    <!-- =================================================
+         RESULT
+    ================================================== -->
+
+    <section
+        id="resultScreen"
+        class="screen"
+    >
+
 
         <div class="result-content">
 
+
             <div class="result-label">
-                ПОЗДРАВЛЯЕМ! ♡
+                ПОЗДРАВЛЯЕМ ♡
             </div>
 
 
             <div class="result-subtitle">
-                Сегодня тебе повезло
+                Ты выиграл
             </div>
 
 
+
             <div class="result-prize">
+
 
                 <div
                     id="resultIcon"
                     class="result-icon"
                 >
-                    🎁
+                    📈
                 </div>
 
 
@@ -206,7 +400,7 @@
                     id="resultName"
                     class="result-name"
                 >
-                    ПРИЗ
+                    СИГНАЛ
                 </div>
 
 
@@ -214,27 +408,38 @@
                     id="resultDescription"
                     class="result-description"
                 >
-                    Твой подарок
+                    Торговый сигнал
                 </div>
 
+
             </div>
+
 
 
             <button
                 id="claimButton"
                 class="primary-button claim-button"
             >
-                🎀 ЗАБРАТЬ ПРИЗ
+
+                🎁 ЗАБРАТЬ ПРИЗ
+
             </button>
 
 
+
             <div class="result-note">
-                Нажми кнопку, чтобы написать @asya_crypto
+
+                Для получения приза
+                напиши нам в Telegram
+
             </div>
+
 
         </div>
 
+
     </section>
+
 
 </div>
 
@@ -242,4 +447,5 @@
 <script src="/app.js"></script>
 
 </body>
+
 </html>
