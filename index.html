@@ -2,7 +2,6 @@
 <html lang="ru">
 
 <head>
-
     <meta charset="UTF-8">
 
     <meta
@@ -23,7 +22,6 @@
         rel="stylesheet"
         href="/style.css"
     >
-
 </head>
 
 
@@ -32,40 +30,30 @@
 <div class="app">
 
 
-    <!-- =================================================
+    <!-- ================================
          HOME
-    ================================================== -->
+    ================================= -->
 
     <section
         id="homeScreen"
         class="screen active"
     >
 
-
         <div class="brand">
-
 
             <div class="brand-icon">
                 ♡
             </div>
 
-
             <div class="brand-title">
 
-                <span>
-                    ASYA
-                </span>
+                <span>ASYA</span>
 
-                <strong>
-                    CRYPTO
-                </strong>
+                <strong>CRYPTO</strong>
 
-                <strong>
-                    ROULETTE
-                </strong>
+                <strong>ROULETTE</strong>
 
             </div>
-
 
             <p>
                 Испытай удачу и получи ценный приз
@@ -74,13 +62,11 @@
         </div>
 
 
-
-        <!-- =================================================
+        <!-- ================================
              PRIZES
-        ================================================== -->
+        ================================= -->
 
         <div class="prizes">
-
 
             <div class="prize-card money">
 
@@ -101,7 +87,6 @@
                 </div>
 
             </div>
-
 
 
             <div class="prize-card tools">
@@ -125,7 +110,6 @@
             </div>
 
 
-
             <div class="prize-card setup">
 
                 <div class="prize-icon">
@@ -145,7 +129,6 @@
                 </div>
 
             </div>
-
 
 
             <div class="prize-card signal">
@@ -168,63 +151,58 @@
 
             </div>
 
-
         </div>
 
 
-
-        <!-- =================================================
+        <!-- ================================
              SPIN BUTTON
-        ================================================== -->
+        ================================= -->
 
         <button
             id="spinButton"
             class="primary-button"
+            type="button"
         >
 
-            <span>
-                ♡
-            </span>
+            <span>♡</span>
 
             КРУТИТЬ РУЛЕТКУ
 
         </button>
 
 
-
         <div class="footer-note">
 
             ASYA CRYPTO
+
             <span>•</span>
+
             ROULETTE
 
         </div>
-
 
     </section>
 
 
 
-    <!-- =================================================
+    <!-- ================================
          ROULETTE
-    ================================================== -->
+    ================================= -->
 
     <section
         id="rouletteScreen"
         class="screen"
     >
 
-
         <div class="screen-header">
-
 
             <button
                 id="backButton"
                 class="back-button"
+                type="button"
             >
                 ‹
             </button>
-
 
             <div>
 
@@ -238,9 +216,7 @@
 
             </div>
 
-
         </div>
-
 
 
         <div class="roulette-title">
@@ -248,94 +224,36 @@
         </div>
 
 
-
-        <!-- =================================================
+        <!-- ================================
              WHEEL
-        ================================================== -->
+        ================================= -->
 
         <div class="roulette-wrapper">
-
 
             <div class="pointer">
                 ▼
             </div>
 
 
+            <!--
+                ВАЖНО:
+                Здесь больше нет wheel-sector.
+                app.js сам создаёт подписи четырёх
+                секторов поверх колеса.
+            -->
+
             <div
                 id="wheel"
                 class="wheel"
             >
 
-
-                <!--
-                    4 визуальных сектора.
-                    Фактический результат определяется
-                    сервером.
-                -->
-
-
-                <div class="wheel-sector sector-money">
-
-                    <span>
-                        💵
-                    </span>
-
-                    <small>
-                        $1,000
-                    </small>
-
-                </div>
-
-
-                <div class="wheel-sector sector-tools">
-
-                    <span>
-                        🛠️
-                    </span>
-
-                    <small>
-                        ИНСТРУМЕНТЫ
-                    </small>
-
-                </div>
-
-
-                <div class="wheel-sector sector-setup">
-
-                    <span>
-                        💎
-                    </span>
-
-                    <small>
-                        СЕТАП
-                    </small>
-
-                </div>
-
-
-                <div class="wheel-sector sector-signal">
-
-                    <span>
-                        📈
-                    </span>
-
-                    <small>
-                        СИГНАЛ
-                    </small>
-
-                </div>
-
-
                 <div class="wheel-center">
                     ♡
                 </div>
 
-
             </div>
 
-
         </div>
-
 
 
         <div
@@ -344,7 +262,6 @@
         >
             Готовы?
         </div>
-
 
 
         <div class="progress-container">
@@ -356,37 +273,31 @@
 
         </div>
 
-
     </section>
 
 
 
-    <!-- =================================================
+    <!-- ================================
          RESULT
-    ================================================== -->
+    ================================= -->
 
     <section
         id="resultScreen"
         class="screen"
     >
 
-
         <div class="result-content">
-
 
             <div class="result-label">
                 ПОЗДРАВЛЯЕМ ♡
             </div>
-
 
             <div class="result-subtitle">
                 Ты выиграл
             </div>
 
 
-
             <div class="result-prize">
-
 
                 <div
                     id="resultIcon"
@@ -411,20 +322,16 @@
                     Торговый сигнал
                 </div>
 
-
             </div>
-
 
 
             <button
                 id="claimButton"
                 class="primary-button claim-button"
+                type="button"
             >
-
                 🎁 ЗАБРАТЬ ПРИЗ
-
             </button>
-
 
 
             <div class="result-note">
@@ -434,9 +341,7 @@
 
             </div>
 
-
         </div>
-
 
     </section>
 
