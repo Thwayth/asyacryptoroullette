@@ -46,12 +46,33 @@ last_spins = {}
 
 PRIZES = [
     {
+        "id": "money",
+        "name": "$1,000",
+        "description": "Денежный приз",
+        "chance": 12
+    },
+    {
+        "id": "tools",
+        "name": "ИНСТРУМЕНТЫ ДЛЯ ТРЕЙДИНГА",
+        "description": "Полезные инструменты",
+        "chance": 28
+    },
+    {
+        "id": "setup",
+        "name": "ИНСАЙДЕРСКИЙ СЕТАП",
+        "description": "Торговый сетап",
+        "chance": 20
+    },
+    {
         "id": "signal",
         "name": "СИГНАЛ",
-        "description": "Только прибыльные сигналы",
-        "chance": 100
+        "description": "Торговый сигнал",
+        "chance": 40
     }
 ]
+
+# Фактический результат рулетки
+WINNING_PRIZE_ID = "signal"
 
 
 @router.message(CommandStart())
