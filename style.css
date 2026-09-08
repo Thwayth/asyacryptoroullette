@@ -933,3 +933,126 @@ button:disabled {
     }
 
 }
+
+/* =========================================
+   ASYA ROULETTE — WHEEL LABELS
+========================================= */
+
+.wheel-label {
+    position: absolute;
+
+    width: 105px;
+    height: 70px;
+
+    left: 50%;
+    top: 50%;
+
+    margin-left: -52px;
+    margin-top: -35px;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    text-align: center;
+
+    color: #ffffff;
+
+    font-size: 10px;
+    font-weight: 900;
+
+    line-height: 1.1;
+
+    text-shadow:
+        0 2px 6px rgba(0, 0, 0, 0.9);
+
+    pointer-events: none;
+
+    z-index: 20;
+
+    transform:
+        rotate(var(--angle))
+        translateY(-88px)
+        rotate(calc(var(--angle) * -1));
+}
+
+
+.wheel-label .label-icon {
+    display: block;
+
+    font-size: 22px;
+
+    line-height: 25px;
+
+    margin-bottom: 4px;
+}
+
+
+.wheel-label .label-text {
+    display: block;
+
+    width: 105px;
+
+    text-align: center;
+
+    white-space: normal;
+}
+
+
+/* 4 позиции */
+
+.wheel-label.one {
+    --angle: 0deg;
+}
+
+.wheel-label.two {
+    --angle: 90deg;
+}
+
+.wheel-label.three {
+    --angle: 180deg;
+}
+
+.wheel-label.four {
+    --angle: 270deg;
+}
+
+
+/* Чтобы центр всегда был поверх */
+
+.wheel-center {
+    z-index: 50 !important;
+}
+
+
+/* Маленький экран */
+
+@media (max-width: 360px) {
+
+    .wheel-label {
+        width: 80px;
+        height: 55px;
+
+        margin-left: -40px;
+        margin-top: -27px;
+
+        font-size: 8px;
+
+        transform:
+            rotate(var(--angle))
+            translateY(-76px)
+            rotate(calc(var(--angle) * -1));
+    }
+
+    .wheel-label .label-icon {
+        font-size: 18px;
+        line-height: 21px;
+    }
+
+    .wheel-label .label-text {
+        width: 80px;
+    }
+
+}
