@@ -117,14 +117,12 @@ function createWheelLabels() {
         label.remove();
     });
 
-
     const positions = [
         "one",
         "two",
         "three",
         "four"
     ];
-
 
     positions.forEach(position => {
 
@@ -321,7 +319,6 @@ claimButton.addEventListener("click", event => {
    INIT
 ========================= */
 
-createWheelLabels();
 
 showScreen(homeScreen);
 
