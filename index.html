@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    >
+
+    <title>ASYA ROULETTE</title>
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- HOME -->
+
+    <section id="homeScreen" class="screen active">
+
+        <div class="brand">
+
+            <div class="brand-icon">♡</div>
+
+            <div class="brand-title">
+                <span>ASYA</span>
+                <strong>ROULETTE</strong>
+            </div>
+
+            <p>
+                Испытай удачу и забери свой подарок ✦
+            </p>
+
+        </div>
+
+
+        <div class="prizes">
+
+            <div class="prize-card jackpot">
+                <div class="prize-icon">💸</div>
+
+                <div class="prize-name">$1,000</div>
+
+                <div class="prize-description">
+                    Главный денежный приз
+                </div>
+
+                <div class="chance">12%</div>
+            </div>
+
+
+            <div class="prize-card tools">
+                <div class="prize-icon">🛠️</div>
+
+                <div class="prize-name">
+                    ИНСТРУМЕНТЫ
+                </div>
+
+                <div class="prize-description">
+                    Для трейдинга
+                </div>
+
+                <div class="chance">28%</div>
+            </div>
+
+
+            <div class="prize-card setup">
+                <div class="prize-icon">🔥</div>
+
+                <div class="prize-name">
+                    ИНСАЙДЕРСКИЙ
+                </div>
+
+                <div class="prize-description">
+                    Сетап
+                </div>
+
+                <div class="chance">20%</div>
+            </div>
+
+
+            <div class="prize-card indicator">
+                <div class="prize-icon">📊</div>
+
+                <div class="prize-name">
+                    ИНДИКАТОР
+                </div>
+
+                <div class="prize-description">
+                    Для трейдинга
+                </div>
+
+                <div class="chance">40%</div>
+            </div>
+
+        </div>
+
+
+        <button id="spinButton" class="primary-button">
+            <span>♡</span>
+            КРУТИТЬ РУЛЕТКУ
+        </button>
+
+
+        <div class="footer-note">
+            ✦ ASYA CRYPTO ✦
+        </div>
+
+    </section>
+
+
+    <!-- ROULETTE -->
+
+    <section id="rouletteScreen" class="screen">
+
+        <div class="screen-header">
+
+            <button id="backButton" class="back-button">
+                ‹
+            </button>
+
+            <div>
+
+                <div class="header-title">
+                    ASYA ROULETTE
+                </div>
+
+                <div class="header-subtitle">
+                    Пусть сегодня повезёт ♡
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="roulette-title">
+            КРУТИМ РУЛЕТКУ
+        </div>
+
+
+        <div class="roulette-wrapper">
+
+            <div class="pointer"></div>
+
+            <div id="wheel" class="wheel">
+
+                <div class="wheel-center">
+                    ♡
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div id="spinStatus" class="spin-status">
+            Готова испытать удачу?
+        </div>
+
+
+        <div class="progress-container">
+
+            <div
+                id="progressBar"
+                class="progress-bar"
+            ></div>
+
+        </div>
+
+    </section>
+
+
+    <!-- RESULT -->
+
+    <section id="resultScreen" class="screen">
+
+        <div class="result-content">
+
+            <div class="result-label">
+                ПОЗДРАВЛЯЕМ! ♡
+            </div>
+
+
+            <div class="result-subtitle">
+                Сегодня тебе повезло
+            </div>
+
+
+            <div class="result-prize">
+
+                <div
+                    id="resultIcon"
+                    class="result-icon"
+                >
+                    🎁
+                </div>
+
+
+                <div
+                    id="resultName"
+                    class="result-name"
+                >
+                    ПРИЗ
+                </div>
+
+
+                <div
+                    id="resultDescription"
+                    class="result-description"
+                >
+                    Твой подарок
+                </div>
+
+            </div>
+
+
+            <button
+                id="claimButton"
+                class="primary-button claim-button"
+            >
+                🎀 ЗАБРАТЬ ПРИЗ
+            </button>
+
+
+            <div class="result-note">
+                Нажми кнопку, чтобы написать @asya_crypto
+            </div>
+
+        </div>
+
+    </section>
+
+</div>
+
+
+<script src="/app.js"></script>
+
+</body>
+</html>
