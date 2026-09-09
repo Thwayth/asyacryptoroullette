@@ -1,5 +1,10 @@
 const tg = window.Telegram?.WebApp || null;
 
+
+// ==========================================
+// TELEGRAM
+// ==========================================
+
 if (tg) {
     tg.ready();
     tg.expand();
@@ -7,8 +12,15 @@ if (tg) {
     try {
         tg.setHeaderColor("#0a070b");
         tg.setBackgroundColor("#0a070b");
-    } catch (e) {}
+    } catch (e) {
+        console.log("Telegram settings error:", e);
+    }
 }
+
+
+// ==========================================
+// SETTINGS
+// ==========================================
 
 const CLAIM_USERNAME = "asya_crypto";
 const SPIN_TIME = 5500;
@@ -43,69 +55,87 @@ const claimButton = document.getElementById("claimButton");
 // HAPTIC
 // ==========================================
 
-function haptic(type) {
+function haptic(type = "impact") {
+
     if (!tg?.HapticFeedback) return;
 
     try {
+
         if (type === "success") {
             tg.HapticFeedback.notificationOccurred("success");
         } else {
             tg.HapticFeedback.impactOccurred("medium");
         }
+
     } catch (e) {}
+
 }
 
 
 // ==========================================
-// SCREENS
+// SCREEN SWITCH
 // ==========================================
 
 function showScreen(screen) {
+
     document.querySelectorAll(".screen").forEach(item => {
         item.classList.remove("active");
     });
 
-    screen.classList.add("active");
+    if (screen) {
+        screen.classList.add("active");
+    }
 
     window.scrollTo(0, 0);
+
 }
 
 
 // ==========================================
-// WHEEL LABELS
+// PREPARE WHEEL
 // ==========================================
 
 function prepareWheel() {
+
     if (!wheel) return;
 
+    // Удаляем старые подписи
     wheel.querySelectorAll(".wheel-label").forEach(el => {
         el.remove();
     });
 
+
     const labels = [
+
         {
             className: "wheel-label one",
             icon: "💵",
             text: "$1,000"
         },
+
         {
             className: "wheel-label two",
             icon: "🛠️",
             text: "ИНСТРУМЕНТЫ"
         },
+
         {
             className: "wheel-label three",
             icon: "💎",
             text: "СЕТАП"
         },
+
         {
             className: "wheel-label four",
             icon: "📈",
             text: "СИГНАЛ"
         }
+
     ];
 
+
     labels.forEach(item => {
+
         const label = document.createElement("div");
 
         label.className = item.className;
@@ -116,15 +146,18 @@ function prepareWheel() {
         `;
 
         wheel.appendChild(label);
+
     });
+
 }
 
 
 // ==========================================
-// PROGRESS
+// PROGRESS BAR
 // ==========================================
 
 function startProgress() {
+
     if (!progressBar) return;
 
     progressBar.style.transition = "none";
@@ -133,11 +166,14 @@ function startProgress() {
     void progressBar.offsetWidth;
 
     requestAnimationFrame(() => {
+
         progressBar.style.transition =
             `width ${SPIN_TIME}ms linear`;
 
         progressBar.style.width = "100%";
+
     });
+
 }
 
 
@@ -146,120 +182,217 @@ function startProgress() {
 // ==========================================
 
 function animateWheel() {
+
     if (!wheel) return;
 
     const fullSpins = 360 * 8;
 
     /*
-        Для 4 секторов:
+        Позиция остановки.
 
-        0°   = верх
-        90°  = право
-        180° = низ
-        270° = лево
+        ВАЖНО:
+        Если сектор СИГНАЛ в твоём CSS расположен
+        немного в другом месте, это число можно
+        поменять.
 
-        Здесь фиксируем остановку
-        на секторе СИГНАЛ.
+        Сейчас используется фиксированная позиция.
     */
 
     const signalPosition = 315;
+
 
     const newRotation =
         currentRotation +
         fullSpins +
         signalPosition;
 
+
     wheel.style.transition = "none";
+
     wheel.style.transform =
         `rotate(${currentRotation}deg)`;
 
+
     void wheel.offsetWidth;
 
+
     requestAnimationFrame(() => {
+
         wheel.style.transition =
             `transform ${SPIN_TIME}ms cubic-bezier(0.12, 0.72, 0.18, 1)`;
 
         wheel.style.transform =
             `rotate(${newRotation}deg)`;
 
-        currentRotation = newRotation;
     });
+
+
+    currentRotation = newRotation;
+
 }
 
 
 // ==========================================
-// GET TELEGRAM USER
+// GET BROWSER ID
+// ==========================================
+
+function getBrowserId() {
+
+    let browserId =
+        localStorage.getItem("roulette_browser_id");
+
+
+    if (!browserId) {
+
+        browserId =
+            "web-" +
+            Math.random()
+                .toString(36)
+                .substring(2) +
+            Date.now()
+                .toString(36);
+
+
+        localStorage.setItem(
+            "roulette_browser_id",
+            browserId
+        );
+
+    }
+
+
+    return browserId;
+
+}
+
+
+// ==========================================
+// GET USER
 // ==========================================
 
 function getTelegramUser() {
 
-    const user = tg?.initDataUnsafe?.user;
+    const user =
+        tg?.initDataUnsafe?.user;
+
+
+    // Открыто через Telegram
 
     if (user) {
+
         return {
+
             user_id: String(user.id),
-            username: user.username || "",
-            first_name: user.first_name || ""
+
+            username:
+                user.username || "",
+
+            first_name:
+                user.first_name || ""
+
         };
+
     }
 
-    // Если пользователь открыл рулетку по обычной ссылке
+
+    // Открыто через обычную ссылку
+
     return {
-        user_id: "web-user-" + getBrowserId(),
+
+        user_id:
+            getBrowserId(),
+
         username: "",
+
         first_name: "Гость"
+
     };
+
 }
+
 
 // ==========================================
 // REQUEST SPIN
 // ==========================================
 
 async function requestSpin() {
-    const user = getTelegramUser();
 
-    if (!user) {
+    const user =
+        getTelegramUser();
+
+
+    const response = await fetch(
+        "/spin",
+        {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type":
+                    "application/json"
+            },
+
+            body:
+                JSON.stringify(user)
+
+        }
+    );
+
+
+    let data;
+
+
+    try {
+
+        data =
+            await response.json();
+
+    } catch (e) {
+
         throw new Error(
-            "Открой рулетку через Telegram"
+            "Сервер вернул неправильный ответ"
         );
+
     }
 
-    const response = await fetch("/spin", {
-        method: "POST",
-
-        headers: {
-            "Content-Type": "application/json"
-        },
-
-        body: JSON.stringify(user)
-    });
-
-    const data = await response.json();
 
     if (!response.ok || !data.ok) {
 
         if (data.seconds_left) {
 
             const totalMinutes =
-                Math.ceil(data.seconds_left / 60);
+                Math.ceil(
+                    data.seconds_left / 60
+                );
+
 
             const hours =
-                Math.floor(totalMinutes / 60);
+                Math.floor(
+                    totalMinutes / 60
+                );
+
 
             const minutes =
                 totalMinutes % 60;
 
+
             throw new Error(
                 `Следующая прокрутка через ${hours} ч. ${minutes} мин.`
             );
+
         }
 
+
         throw new Error(
-            data.error || "Не удалось запустить рулетку"
+            data.error ||
+            "Не удалось запустить рулетку"
         );
+
     }
 
+
     return data.prize;
+
 }
 
 
@@ -271,24 +404,38 @@ async function startSpin() {
 
     if (isSpinning) return;
 
+
     isSpinning = true;
 
-    spinButton.disabled = true;
 
-    haptic("spin");
+    if (spinButton) {
+        spinButton.disabled = true;
+    }
+
+
+    haptic("impact");
+
 
     try {
 
-        // Сначала проверяем сервер.
-        // Если 24 часа ещё не прошли —
-        // колесо вообще не запускается.
+        // Сначала проверяем возможность прокрутки
+        const prize =
+            await requestSpin();
 
-        const prize = await requestSpin();
 
-        showScreen(rouletteScreen);
+        // Потом открываем экран рулетки
+        showScreen(
+            rouletteScreen
+        );
 
-        spinStatus.textContent =
-            "РУЛЕТКА КРУТИТСЯ... ♡";
+
+        if (spinStatus) {
+
+            spinStatus.textContent =
+                "РУЛЕТКА КРУТИТСЯ... ♡";
+
+        }
+
 
         startProgress();
 
@@ -296,66 +443,122 @@ async function startSpin() {
 
 
         setTimeout(() => {
-            showResult(prize);
+
+            showResult(
+                prize
+            );
+
         }, SPIN_TIME + 150);
+
 
     } catch (error) {
 
+        console.error(error);
+
+
         isSpinning = false;
 
-        spinButton.disabled = false;
 
-        spinStatus.textContent =
-            "Готовы?";
+        if (spinButton) {
+            spinButton.disabled = false;
+        }
 
-        alert(error.message);
+
+        if (spinStatus) {
+            spinStatus.textContent =
+                "Готовы?";
+        }
+
+
+        alert(
+            error.message ||
+            "Произошла ошибка"
+        );
+
     }
+
 }
 
 
 // ==========================================
-// RESULT
+// SHOW RESULT
 // ==========================================
 
 function showResult(prize) {
 
     isSpinning = false;
 
-    resultIcon.textContent =
-        prize.icon || "📈";
 
-    resultName.textContent =
-        prize.name || "СИГНАЛ";
+    if (resultIcon) {
 
-    resultDescription.textContent =
-        prize.description || "Торговый сигнал";
+        resultIcon.textContent =
+            prize.icon || "📈";
 
-    spinStatus.textContent =
-        "Готово ♡";
+    }
+
+
+    if (resultName) {
+
+        resultName.textContent =
+            prize.name || "СИГНАЛ";
+
+    }
+
+
+    if (resultDescription) {
+
+        resultDescription.textContent =
+            prize.description ||
+            "Торговый сигнал";
+
+    }
+
+
+    if (spinStatus) {
+
+        spinStatus.textContent =
+            "Готово ♡";
+
+    }
+
 
     haptic("success");
 
-    showScreen(resultScreen);
+
+    showScreen(
+        resultScreen
+    );
+
 }
 
 
 // ==========================================
-// CLAIM
+// CLAIM PRIZE
 // ==========================================
 
 function claimPrize() {
 
     const message =
-        "Здравствуйте! 🎀 Я получила СИГНАЛ в рулетке и хочу забрать приз ♡";
+        "Здравствуйте! 🎀 Я получила торговый сигнал и хочу забрать свой приз ♡";
+
 
     const url =
         `https://t.me/${CLAIM_USERNAME}?text=${encodeURIComponent(message)}`;
 
+
     if (tg?.openTelegramLink) {
+
         tg.openTelegramLink(url);
+
     } else {
-        window.open(url, "_blank");
+
+        window.open(
+            url,
+            "_blank"
+        );
+
     }
+
 }
 
 
@@ -364,31 +567,61 @@ function claimPrize() {
 // ==========================================
 
 if (spinButton) {
-    spinButton.addEventListener("click", event => {
-        event.preventDefault();
-        startSpin();
-    });
+
+    spinButton.addEventListener(
+        "click",
+        event => {
+
+            event.preventDefault();
+
+            startSpin();
+
+        }
+    );
+
 }
 
 
 if (backButton) {
-    backButton.addEventListener("click", event => {
-        event.preventDefault();
 
-        if (isSpinning) return;
+    backButton.addEventListener(
+        "click",
+        event => {
 
-        showScreen(homeScreen);
+            event.preventDefault();
 
-        spinButton.disabled = false;
-    });
+
+            if (isSpinning) return;
+
+
+            showScreen(
+                homeScreen
+            );
+
+
+            if (spinButton) {
+                spinButton.disabled = false;
+            }
+
+        }
+    );
+
 }
 
 
 if (claimButton) {
-    claimButton.addEventListener("click", event => {
-        event.preventDefault();
-        claimPrize();
-    });
+
+    claimButton.addEventListener(
+        "click",
+        event => {
+
+            event.preventDefault();
+
+            claimPrize();
+
+        }
+    );
+
 }
 
 
@@ -400,4 +633,6 @@ prepareWheel();
 
 showScreen(homeScreen);
 
-console.log("ASYA CRYPTO ROULETTE READY ♡");
+console.log(
+    "ASYA CRYPTO ROULETTE READY ♡"
+);
