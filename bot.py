@@ -6,12 +6,20 @@ from datetime import datetime, timezone, timedelta
 from aiohttp import web
 from aiogram import Bot, Dispatcher, Router
 from aiogram.filters import CommandStart
-from aiogram.types import Message
+from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
+
 
 logging.basicConfig(level=logging.INFO)
 
+
+# =========================================================
+# SETTINGS
+# =========================================================
+
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID")
+WEB_APP_URL = os.getenv("WEB_APP_URL")
+
 
 if not BOT_TOKEN:
     raise RuntimeError("BOT_TOKEN не найден в Environment Variables")
@@ -19,16 +27,18 @@ if not BOT_TOKEN:
 if not ADMIN_CHAT_ID:
     raise RuntimeError("ADMIN_CHAT_ID не найден в Environment Variables")
 
+if not WEB_APP_URL:
+    raise RuntimeError("WEB_APP_URL не найден в Environment Variables")
+
 
 router = Router()
 
-# Храним время последней прокрутки.
-# Важно: после перезапуска сервера этот список сбросится.
+# Последние прокрутки пользователей
 last_spins = {}
 
 
 # =========================================================
-# ПРИЗЫ — ВИЗУАЛЬНЫЕ ДАННЫЕ
+# VISUAL PRIZES
 # =========================================================
 
 PRIZES = [
@@ -36,76 +46,63 @@ PRIZES = [
         "id": "money",
         "name": "$1,000",
         "description": "Денежный приз",
-        "chance": 12,
         "icon": "💵"
     },
     {
         "id": "tools",
         "name": "ИНСТРУМЕНТЫ ДЛЯ ТРЕЙДИНГА",
         "description": "Полезные инструменты",
-        "chance": 28,
         "icon": "🛠️"
     },
     {
         "id": "setup",
         "name": "ИНСАЙДЕРСКИЙ СЕТАП",
         "description": "Торговый сетап",
-        "chance": 20,
         "icon": "💎"
     },
     {
         "id": "signal",
         "name": "СИГНАЛ",
         "description": "Торговый сигнал",
-        "chance": 40,
         "icon": "📈"
     }
 ]
 
 
-# Фактический результат рулетки
-WINNING_PRIZE_ID = "signal"
-
-
 # =========================================================
-# TELEGRAM /START
+# START
 # =========================================================
 
 @router.message(CommandStart())
 async def start_handler(message: Message):
 
-    keyboard = {
-        "inline_keyboard": [
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
             [
-                {
-                    "text": "🎀 Открыть рулетку",
-                    "web_app": {
-                        "url": os.getenv(
-                            "WEB_APP_URL",
-                            "https://your-vercel-project.vercel.app"
-                        )
-                    }
-                }
+                InlineKeyboardButton(
+                    text="🎀 Открыть рулетку",
+                    web_app=WebAppInfo(url=WEB_APP_URL)
+                )
             ]
         ]
-    }
-
-    from aiogram.types import InlineKeyboardMarkup
+    )
 
     await message.answer(
         "🎀 ASYA CRYPTO ROULETTE\n\n"
-        "Испытай удачу и получи свой приз ✨\n\n"
-        "Нажми кнопку ниже, чтобы открыть рулетку.",
-        reply_markup=InlineKeyboardMarkup(**keyboard)
+        "Испытай удачу и получи свой приз ✨",
+        reply_markup=keyboard
     )
 
 
 # =========================================================
-# HEALTH CHECK
+# HEALTH
 # =========================================================
 
 async def health_handler(request):
-    return web.Response(text="OK")
+
+    return web.Response(
+        text="ASYA CRYPTO BOT OK"
+    )
 
 
 # =========================================================
@@ -133,16 +130,14 @@ async def spin_handler(request):
     ).strip()
 
 
-    # -----------------------------------------------------
     # Проверяем пользователя
-    # -----------------------------------------------------
 
     if not user_id:
 
         return web.json_response(
             {
                 "ok": False,
-                "error": "Пользователь Telegram не определён"
+                "error": "Пользователь не определён"
             },
             status=400
         )
@@ -151,9 +146,9 @@ async def spin_handler(request):
     now = datetime.now(timezone.utc)
 
 
-    # -----------------------------------------------------
-    # Проверка 24 часов
-    # -----------------------------------------------------
+    # =====================================================
+    # 24 HOURS LIMIT
+    # =====================================================
 
     previous_spin = last_spins.get(user_id)
 
@@ -177,38 +172,45 @@ async def spin_handler(request):
             )
 
 
-    # -----------------------------------------------------
-    # ФАКТИЧЕСКИЙ ПРИЗ
-    # -----------------------------------------------------
+    # =====================================================
+    # RESULT
+    # =====================================================
+
+    # Гарантированный приз
 
     prize = next(
-        item
-        for item in PRIZES
-        if item["id"] == WINNING_PRIZE_ID
+        item for item in PRIZES
+        if item["id"] == "signal"
     )
 
 
-    # -----------------------------------------------------
-    # Запоминаем прокрутку
-    # -----------------------------------------------------
+    # Сохраняем время прокрутки
 
     last_spins[user_id] = now
 
 
-    # -----------------------------------------------------
-    # Сообщение админу
-    # -----------------------------------------------------
+    # =====================================================
+    # ADMIN MESSAGE
+    # =====================================================
 
     bot = request.app["bot"]
 
 
+    username_text = (
+        f"@{username}"
+        if username
+        else "не указан"
+    )
+
+
     admin_message = (
-        "🎀 НОВЫЙ ВЫИГРЫШ\n\n"
+        "🎀 НОВАЯ ПРОКРУТКА\n\n"
+
         f"🏆 Приз: {prize['name']}\n"
         f"📝 {prize['description']}\n\n"
+
         f"👤 Имя: {first_name or 'не указано'}\n"
-        f"🔗 Username: "
-        f"@{username if username else 'не указан'}\n"
+        f"🔗 Username: {username_text}\n"
         f"🆔 ID: {user_id}"
     )
 
@@ -223,25 +225,20 @@ async def spin_handler(request):
     except Exception as error:
 
         logging.error(
-            "Не удалось отправить сообщение админу: %s",
+            "Ошибка отправки админу: %s",
             error
         )
 
 
-    # -----------------------------------------------------
-    # Ответ сайту
-    # -----------------------------------------------------
+    # =====================================================
+    # RESPONSE
+    # =====================================================
 
     return web.json_response(
         {
             "ok": True,
 
-            "prize": {
-                "id": prize["id"],
-                "name": prize["name"],
-                "description": prize["description"],
-                "icon": prize["icon"]
-            },
+            "prize": prize,
 
             "next_spin_seconds": 86400
         }
@@ -264,7 +261,6 @@ async def main():
     app["bot"] = bot
 
 
-    # API
     app.router.add_get(
         "/",
         health_handler
@@ -300,7 +296,6 @@ async def main():
         port
     )
 
-
     await site.start()
 
 
@@ -325,10 +320,6 @@ async def main():
 
         await runner.cleanup()
 
-
-# =========================================================
-# START
-# =========================================================
 
 if __name__ == "__main__":
     asyncio.run(main())
