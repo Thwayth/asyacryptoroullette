@@ -171,12 +171,17 @@ function animateWheel() {
 
     if (!wheel) return;
 
-    // Каждый раз вращаем минимум 8 полных оборотов.
-    const extraRotation =
-        360 * 8 + Math.floor(Math.random() * 360);
+    // Колесо делает 8 полных оборотов
+    const fullSpins = 360 * 8;
+
+    // СИГНАЛ — сектор, на котором останавливаем рулетку.
+    // Подстрой это значение, если сектор SIGNAL расположен иначе.
+    const signalAngle = 315;
 
     const newRotation =
-        currentRotation + extraRotation;
+        currentRotation +
+        fullSpins +
+        signalAngle;
 
 
     wheel.style.transition = "none";
@@ -199,6 +204,7 @@ function animateWheel() {
         currentRotation = newRotation;
 
     });
+
 }
 
 
