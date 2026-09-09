@@ -1,177 +1,202 @@
 import json
 import os
 import time
-import urllib.request
 import urllib.parse
-from http.server import BaseHTTPRequestHandler
+import urllib.request
 
-# 24 часа
 COOLDOWN = 24 * 60 * 60
 
-# Для текущего serverless-инстанса
+PRIZES = [
+    {
+        "id": "money",
+        "name": "$1,000"
+    },
+    {
+        "id": "tools",
+        "name": "ИНСТРУМЕНТЫ"
+    },
+    {
+        "id": "insider",
+        "name": "ИНСАЙДЕРСКИЙ СЕТАП"
+    },
+    {
+        "id": "signal",
+        "name": "СИГНАЛ"
+    }
+]
+
+# Результат всегда СИГНАЛ
+SIGNAL = next(
+    prize for prize in PRIZES
+    if prize["id"] == "signal"
+)
+
+# Временное хранилище на инстансе Vercel
 last_spins = {}
 
-SIGNAL = {
-    "id": "signal",
-    "name": "СИГНАЛ"
-}
 
-
-def send_telegram_message(text):
+def send_telegram(text):
     token = os.environ.get("BOT_TOKEN")
     admin_chat_id = os.environ.get("ADMIN_CHAT_ID")
 
     if not token or not admin_chat_id:
         return
 
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    url = (
+        f"https://api.telegram.org/bot{token}/sendMessage"
+    )
 
     data = urllib.parse.urlencode({
         "chat_id": admin_chat_id,
         "text": text
     }).encode()
 
+    request = urllib.request.Request(
+        url,
+        data=data,
+        method="POST"
+    )
+
     try:
-        request = urllib.request.Request(
-            url,
-            data=data,
-            method="POST"
+        urllib.request.urlopen(
+            request,
+            timeout=10
         )
-
-        urllib.request.urlopen(request, timeout=10)
-
     except Exception:
         pass
 
 
-class handler(BaseHTTPRequestHandler):
+def handler(request):
+    """
+    Vercel entry point.
+    """
 
-    def _response(self, status, data):
-        body = json.dumps(
-            data,
-            ensure_ascii=False
-        ).encode("utf-8")
+    # OPTIONS
+    if request.method == "OPTIONS":
+        return {
+            "statusCode": 200,
+            "headers": {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Headers": "Content-Type",
+                "Access-Control-Allow-Methods": "POST, OPTIONS"
+            },
+            "body": ""
+        }
 
-        self.send_response(status)
-        self.send_header(
-            "Content-Type",
-            "application/json; charset=utf-8"
-        )
-        self.send_header(
-            "Access-Control-Allow-Origin",
-            "*"
-        )
-        self.send_header(
-            "Access-Control-Allow-Headers",
-            "Content-Type"
-        )
-        self.send_header(
-            "Access-Control-Allow-Methods",
-            "POST, OPTIONS"
-        )
-        self.end_headers()
+    # Только POST
+    if request.method != "POST":
+        return {
+            "statusCode": 405,
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            },
+            "body": json.dumps({
+                "ok": False,
+                "error": "Method not allowed"
+            })
+        }
 
-        self.wfile.write(body)
+    try:
+        if hasattr(request, "json"):
+            user = request.json
+        else:
+            user = json.loads(request.body)
 
-    def do_OPTIONS(self):
-        self._response(200, {"ok": True})
+    except Exception:
+        return {
+            "statusCode": 400,
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            },
+            "body": json.dumps({
+                "ok": False,
+                "error": "Некорректные данные"
+            })
+        }
 
-    def do_POST(self):
+    user_id = str(
+        user.get("user_id", "")
+    )
 
-        try:
-            length = int(
-                self.headers.get("Content-Length", 0)
-            )
+    username = user.get(
+        "username",
+        ""
+    )
 
-            raw = self.rfile.read(length)
+    first_name = user.get(
+        "first_name",
+        ""
+    )
 
-            user = json.loads(
-                raw.decode("utf-8")
-            )
+    if not user_id:
+        return {
+            "statusCode": 400,
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            },
+            "body": json.dumps({
+                "ok": False,
+                "error": "Не указан user_id"
+            })
+        }
 
-        except Exception:
-            self._response(
-                400,
-                {
+    now = int(time.time())
+
+    # Проверка 24 часов
+    previous = last_spins.get(user_id)
+
+    if previous:
+        elapsed = now - previous
+
+        if elapsed < COOLDOWN:
+            remaining = COOLDOWN - elapsed
+
+            return {
+                "statusCode": 429,
+                "headers": {
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*"
+                },
+                "body": json.dumps({
                     "ok": False,
-                    "error": "Некорректные данные"
-                }
-            )
-            return
-
-        user_id = str(
-            user.get("user_id", "")
-        )
-
-        username = user.get(
-            "username",
-            ""
-        )
-
-        first_name = user.get(
-            "first_name",
-            ""
-        )
-
-        if not user_id:
-            self._response(
-                400,
-                {
-                    "ok": False,
-                    "error": "Не указан user_id"
-                }
-            )
-            return
-
-        now = int(time.time())
-
-        # Проверяем 24 часа
-        previous = last_spins.get(user_id)
-
-        if previous:
-            elapsed = now - previous
-
-            if elapsed < COOLDOWN:
-
-                remaining = COOLDOWN - elapsed
-
-                self._response(
-                    429,
-                    {
-                        "ok": False,
-                        "error": "cooldown",
-                        "next_spin_seconds": remaining
-                    }
-                )
-
-                return
-
-        # Результат — СИГНАЛ
-        prize = SIGNAL
-
-        last_spins[user_id] = now
-
-        # Сообщение админу
-        display_name = (
-            f"@{username}"
-            if username
-            else first_name or "Без username"
-        )
-
-        message = (
-            "🎰 ASYA CRYPTO ROULETTE\n\n"
-            f"👤 Игрок: {display_name}\n"
-            f"🆔 ID: {user_id}\n\n"
-            "🏆 Результат: СИГНАЛ"
-        )
-
-        send_telegram_message(message)
-
-        self._response(
-            200,
-            {
-                "ok": True,
-                "prize": prize,
-                "next_spin_seconds": COOLDOWN
+                    "error": "cooldown",
+                    "next_spin_seconds": remaining
+                })
             }
-        )
+
+    # Фиксируем прокрутку
+    last_spins[user_id] = now
+
+    # Фактический приз
+    prize = SIGNAL
+
+    if username:
+        player = "@" + username
+    elif first_name:
+        player = first_name
+    else:
+        player = "Без username"
+
+    # Уведомление админу
+    send_telegram(
+        "🎰 ASYA CRYPTO ROULETTE\n\n"
+        f"👤 Игрок: {player}\n"
+        f"🆔 ID: {user_id}\n\n"
+        "🏆 Результат: СИГНАЛ"
+    )
+
+    return {
+        "statusCode": 200,
+        "headers": {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*"
+        },
+        "body": json.dumps({
+            "ok": True,
+            "prize": prize,
+            "next_spin_seconds": COOLDOWN
+        }, ensure_ascii=False)
+    }
