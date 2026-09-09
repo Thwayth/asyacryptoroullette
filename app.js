@@ -1,10 +1,5 @@
 const tg = window.Telegram?.WebApp || null;
 
-
-// ==========================================
-// TELEGRAM
-// ==========================================
-
 if (tg) {
     tg.ready();
     tg.expand();
@@ -12,15 +7,15 @@ if (tg) {
     try {
         tg.setHeaderColor("#0a070b");
         tg.setBackgroundColor("#0a070b");
-    } catch (e) {
-        console.log("Telegram settings error:", e);
-    }
+    } catch (e) {}
 }
 
 
-// ==========================================
+// =====================================================
 // SETTINGS
-// ==========================================
+// =====================================================
+
+const API_URL = "ВСТАВЬ_СЮДА_АДРЕС_СЕРВЕРА";
 
 const CLAIM_USERNAME = "asya_crypto";
 const SPIN_TIME = 5500;
@@ -29,9 +24,9 @@ let isSpinning = false;
 let currentRotation = 0;
 
 
-// ==========================================
+// =====================================================
 // ELEMENTS
-// ==========================================
+// =====================================================
 
 const homeScreen = document.getElementById("homeScreen");
 const rouletteScreen = document.getElementById("rouletteScreen");
@@ -46,16 +41,18 @@ const progressBar = document.getElementById("progressBar");
 
 const resultIcon = document.getElementById("resultIcon");
 const resultName = document.getElementById("resultName");
-const resultDescription = document.getElementById("resultDescription");
+const resultDescription =
+    document.getElementById("resultDescription");
 
-const claimButton = document.getElementById("claimButton");
+const claimButton =
+    document.getElementById("claimButton");
 
 
-// ==========================================
+// =====================================================
 // HAPTIC
-// ==========================================
+// =====================================================
 
-function haptic(type = "impact") {
+function haptic(type) {
 
     if (!tg?.HapticFeedback) return;
 
@@ -72,9 +69,9 @@ function haptic(type = "impact") {
 }
 
 
-// ==========================================
-// SCREEN SWITCH
-// ==========================================
+// =====================================================
+// SCREEN
+// =====================================================
 
 function showScreen(screen) {
 
@@ -87,22 +84,86 @@ function showScreen(screen) {
     }
 
     window.scrollTo(0, 0);
-
 }
 
 
-// ==========================================
-// PREPARE WHEEL
-// ==========================================
+// =====================================================
+// BROWSER ID
+// =====================================================
+
+function getBrowserId() {
+
+    let id =
+        localStorage.getItem("asya_roulette_browser_id");
+
+    if (!id) {
+
+        id =
+            "web-" +
+            crypto.randomUUID();
+
+        localStorage.setItem(
+            "asya_roulette_browser_id",
+            id
+        );
+    }
+
+    return id;
+}
+
+
+// =====================================================
+// USER
+// =====================================================
+
+function getUser() {
+
+    const telegramUser =
+        tg?.initDataUnsafe?.user;
+
+
+    if (telegramUser) {
+
+        return {
+
+            user_id:
+                String(telegramUser.id),
+
+            username:
+                telegramUser.username || "",
+
+            first_name:
+                telegramUser.first_name || ""
+
+        };
+    }
+
+
+    return {
+
+        user_id:
+            getBrowserId(),
+
+        username: "",
+
+        first_name: "Гость"
+
+    };
+}
+
+
+// =====================================================
+// WHEEL LABELS
+// =====================================================
 
 function prepareWheel() {
 
     if (!wheel) return;
 
-    // Удаляем старые подписи
-    wheel.querySelectorAll(".wheel-label").forEach(el => {
-        el.remove();
-    });
+
+    wheel
+        .querySelectorAll(".wheel-label")
+        .forEach(el => el.remove());
 
 
     const labels = [
@@ -136,25 +197,32 @@ function prepareWheel() {
 
     labels.forEach(item => {
 
-        const label = document.createElement("div");
+        const element =
+            document.createElement("div");
 
-        label.className = item.className;
+        element.className =
+            item.className;
 
-        label.innerHTML = `
-            <span class="label-icon">${item.icon}</span>
-            <span class="label-text">${item.text}</span>
+        element.innerHTML = `
+            <span class="label-icon">
+                ${item.icon}
+            </span>
+
+            <span class="label-text">
+                ${item.text}
+            </span>
         `;
 
-        wheel.appendChild(label);
+        wheel.appendChild(element);
 
     });
 
 }
 
 
-// ==========================================
-// PROGRESS BAR
-// ==========================================
+// =====================================================
+// PROGRESS
+// =====================================================
 
 function startProgress() {
 
@@ -177,34 +245,35 @@ function startProgress() {
 }
 
 
-// ==========================================
+// =====================================================
 // WHEEL ANIMATION
-// ==========================================
+// =====================================================
 
 function animateWheel() {
 
     if (!wheel) return;
 
-    const fullSpins = 360 * 8;
 
     /*
-        Позиция остановки.
+        4 визуальных сектора по 90°.
 
-        ВАЖНО:
-        Если сектор СИГНАЛ в твоём CSS расположен
-        немного в другом месте, это число можно
-        поменять.
+        Сектор СИГНАЛ находится в четвёртом
+        секторе.
 
-        Сейчас используется фиксированная позиция.
+        Мы НЕ выбираем случайный угол.
+        Колесо всегда заканчивает движение
+        на СИГНАЛЕ.
     */
 
-    const signalPosition = 315;
+    const fullSpins = 360 * 8;
+
+    const signalAngle = 315;
 
 
-    const newRotation =
+    const targetRotation =
         currentRotation +
         fullSpins +
-        signalPosition;
+        signalAngle;
 
 
     wheel.style.transition = "none";
@@ -221,120 +290,38 @@ function animateWheel() {
         wheel.style.transition =
             `transform ${SPIN_TIME}ms cubic-bezier(0.12, 0.72, 0.18, 1)`;
 
+
         wheel.style.transform =
-            `rotate(${newRotation}deg)`;
+            `rotate(${targetRotation}deg)`;
 
     });
 
 
-    currentRotation = newRotation;
+    currentRotation =
+        targetRotation;
 
 }
 
 
-// ==========================================
-// GET BROWSER ID
-// ==========================================
-
-function getBrowserId() {
-
-    let browserId =
-        localStorage.getItem("roulette_browser_id");
-
-
-    if (!browserId) {
-
-        browserId =
-            "web-" +
-            Math.random()
-                .toString(36)
-                .substring(2) +
-            Date.now()
-                .toString(36);
-
-
-        localStorage.setItem(
-            "roulette_browser_id",
-            browserId
-        );
-
-    }
-
-
-    return browserId;
-
-}
-
-
-// ==========================================
-// GET USER
-// ==========================================
-
-function getTelegramUser() {
-
-    const user =
-        tg?.initDataUnsafe?.user;
-
-
-    // Открыто через Telegram
-
-    if (user) {
-
-        return {
-
-            user_id: String(user.id),
-
-            username:
-                user.username || "",
-
-            first_name:
-                user.first_name || ""
-
-        };
-
-    }
-
-
-    // Открыто через обычную ссылку
-
-    return {
-
-        user_id:
-            getBrowserId(),
-
-        username: "",
-
-        first_name: "Гость"
-
-    };
-
-}
-
-
-// ==========================================
-// REQUEST SPIN
-// ==========================================
+// =====================================================
+// SERVER SPIN
+// =====================================================
 
 async function requestSpin() {
 
-    const user =
-        getTelegramUser();
+    const user = getUser();
 
 
     const response = await fetch(
-        "/spin",
+        `${API_URL}/spin`,
         {
-
             method: "POST",
 
             headers: {
-                "Content-Type":
-                    "application/json"
+                "Content-Type": "application/json"
             },
 
-            body:
-                JSON.stringify(user)
-
+            body: JSON.stringify(user)
         }
     );
 
@@ -350,7 +337,7 @@ async function requestSpin() {
     } catch (e) {
 
         throw new Error(
-            "Сервер вернул неправильный ответ"
+            "Сервер не вернул JSON. Проверь адрес API."
         );
 
     }
@@ -379,7 +366,6 @@ async function requestSpin() {
             throw new Error(
                 `Следующая прокрутка через ${hours} ч. ${minutes} мин.`
             );
-
         }
 
 
@@ -387,7 +373,6 @@ async function requestSpin() {
             data.error ||
             "Не удалось запустить рулетку"
         );
-
     }
 
 
@@ -396,9 +381,9 @@ async function requestSpin() {
 }
 
 
-// ==========================================
-// START SPIN
-// ==========================================
+// =====================================================
+// START
+// =====================================================
 
 async function startSpin() {
 
@@ -413,17 +398,20 @@ async function startSpin() {
     }
 
 
-    haptic("impact");
-
-
     try {
 
-        // Сначала проверяем возможность прокрутки
+        /*
+            Сначала сервер проверяет:
+            можно ли пользователю крутить.
+
+            Если 24 часа ещё не прошли,
+            колесо вообще не начинает вращение.
+        */
+
         const prize =
             await requestSpin();
 
 
-        // Потом открываем экран рулетки
         showScreen(
             rouletteScreen
         );
@@ -437,6 +425,8 @@ async function startSpin() {
         }
 
 
+        haptic("impact");
+
         startProgress();
 
         animateWheel();
@@ -444,9 +434,7 @@ async function startSpin() {
 
         setTimeout(() => {
 
-            showResult(
-                prize
-            );
+            showResult(prize);
 
         }, SPIN_TIME + 150);
 
@@ -464,12 +452,6 @@ async function startSpin() {
         }
 
 
-        if (spinStatus) {
-            spinStatus.textContent =
-                "Готовы?";
-        }
-
-
         alert(
             error.message ||
             "Произошла ошибка"
@@ -480,50 +462,55 @@ async function startSpin() {
 }
 
 
-// ==========================================
-// SHOW RESULT
-// ==========================================
+// =====================================================
+// RESULT
+// =====================================================
 
 function showResult(prize) {
 
     isSpinning = false;
 
 
+    /*
+        Дополнительная защита:
+        даже если backend по ошибке вернёт
+        другой приз, интерфейс показывает
+        только СИГНАЛ.
+    */
+
+    const signal = {
+        id: "signal",
+        name: "СИГНАЛ",
+        description: "Торговый сигнал",
+        icon: "📈"
+    };
+
+
     if (resultIcon) {
-
         resultIcon.textContent =
-            prize.icon || "📈";
-
+            signal.icon;
     }
 
 
     if (resultName) {
-
         resultName.textContent =
-            prize.name || "СИГНАЛ";
-
+            signal.name;
     }
 
 
     if (resultDescription) {
-
         resultDescription.textContent =
-            prize.description ||
-            "Торговый сигнал";
-
+            signal.description;
     }
 
 
     if (spinStatus) {
-
         spinStatus.textContent =
             "Готово ♡";
-
     }
 
 
     haptic("success");
-
 
     showScreen(
         resultScreen
@@ -532,14 +519,14 @@ function showResult(prize) {
 }
 
 
-// ==========================================
-// CLAIM PRIZE
-// ==========================================
+// =====================================================
+// CLAIM
+// =====================================================
 
 function claimPrize() {
 
     const message =
-        "Здравствуйте! 🎀 Я получила торговый сигнал и хочу забрать свой приз ♡";
+        "Здравствуйте! 🎀 Я получила СИГНАЛ в рулетке и хочу забрать приз ♡";
 
 
     const url =
@@ -562,9 +549,9 @@ function claimPrize() {
 }
 
 
-// ==========================================
+// =====================================================
 // EVENTS
-// ==========================================
+// =====================================================
 
 if (spinButton) {
 
@@ -625,13 +612,15 @@ if (claimButton) {
 }
 
 
-// ==========================================
+// =====================================================
 // INIT
-// ==========================================
+// =====================================================
 
 prepareWheel();
 
-showScreen(homeScreen);
+showScreen(
+    homeScreen
+);
 
 console.log(
     "ASYA CRYPTO ROULETTE READY ♡"
