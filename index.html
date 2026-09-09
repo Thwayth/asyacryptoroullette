@@ -2,6 +2,7 @@
 <html lang="ru">
 
 <head>
+
     <meta charset="UTF-8">
 
     <meta
@@ -9,19 +10,14 @@
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     >
 
-    <meta
-        name="theme-color"
-        content="#0a070b"
-    >
+    <meta name="theme-color" content="#0a070b">
 
     <title>ASYA CRYPTO ROULETTE</title>
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-    <link
-        rel="stylesheet"
-        href="/style.css"
-    >
+    <link rel="stylesheet" href="/style.css">
+
 </head>
 
 
@@ -30,9 +26,7 @@
 <div class="app">
 
 
-    <!-- ================================
-         HOME
-    ================================= -->
+    <!-- HOME -->
 
     <section
         id="homeScreen"
@@ -45,6 +39,7 @@
                 ♡
             </div>
 
+
             <div class="brand-title">
 
                 <span>ASYA</span>
@@ -55,6 +50,7 @@
 
             </div>
 
+
             <p>
                 Испытай удачу и получи ценный приз
             </p>
@@ -62,11 +58,13 @@
         </div>
 
 
-        <!-- ================================
-             PRIZES
-        ================================= -->
+
+        <!-- PRIZES -->
 
         <div class="prizes">
+
+
+            <!-- $1000 -->
 
             <div class="prize-card money">
 
@@ -82,12 +80,11 @@
                     Денежный приз
                 </div>
 
-                <div class="prize-chance">
-                    12%
-                </div>
-
             </div>
 
+
+
+            <!-- TOOLS -->
 
             <div class="prize-card tools">
 
@@ -103,12 +100,11 @@
                     Для трейдинга
                 </div>
 
-                <div class="prize-chance">
-                    28%
-                </div>
-
             </div>
 
+
+
+            <!-- SETUP -->
 
             <div class="prize-card setup">
 
@@ -124,12 +120,11 @@
                     Торговый сетап
                 </div>
 
-                <div class="prize-chance">
-                    20%
-                </div>
-
             </div>
 
+
+
+            <!-- SIGNAL -->
 
             <div class="prize-card signal">
 
@@ -145,18 +140,14 @@
                     Торговый сигнал
                 </div>
 
-                <div class="prize-chance">
-                    40%
-                </div>
-
             </div>
+
 
         </div>
 
 
-        <!-- ================================
-             SPIN BUTTON
-        ================================= -->
+
+        <!-- BUTTON -->
 
         <button
             id="spinButton"
@@ -171,6 +162,7 @@
         </button>
 
 
+
         <div class="footer-note">
 
             ASYA CRYPTO
@@ -181,20 +173,21 @@
 
         </div>
 
+
     </section>
 
 
 
-    <!-- ================================
-         ROULETTE
-    ================================= -->
+    <!-- ROULETTE -->
 
     <section
         id="rouletteScreen"
         class="screen"
     >
 
+
         <div class="screen-header">
+
 
             <button
                 id="backButton"
@@ -203,6 +196,7 @@
             >
                 ‹
             </button>
+
 
             <div>
 
@@ -216,7 +210,9 @@
 
             </div>
 
+
         </div>
+
 
 
         <div class="roulette-title">
@@ -224,28 +220,23 @@
         </div>
 
 
-        <!-- ================================
-             WHEEL
-        ================================= -->
+
+        <!-- WHEEL -->
 
         <div class="roulette-wrapper">
+
 
             <div class="pointer">
                 ▼
             </div>
 
 
-            <!--
-                ВАЖНО:
-                Здесь больше нет wheel-sector.
-                app.js сам создаёт подписи четырёх
-                секторов поверх колеса.
-            -->
-
             <div
                 id="wheel"
                 class="wheel"
             >
+
+                <!-- Подписи добавляет app.js -->
 
                 <div class="wheel-center">
                     ♡
@@ -253,7 +244,9 @@
 
             </div>
 
+
         </div>
+
 
 
         <div
@@ -262,6 +255,7 @@
         >
             Готовы?
         </div>
+
 
 
         <div class="progress-container">
@@ -273,31 +267,35 @@
 
         </div>
 
+
     </section>
 
 
 
-    <!-- ================================
-         RESULT
-    ================================= -->
+    <!-- RESULT -->
 
     <section
         id="resultScreen"
         class="screen"
     >
 
+
         <div class="result-content">
+
 
             <div class="result-label">
                 ПОЗДРАВЛЯЕМ ♡
             </div>
+
 
             <div class="result-subtitle">
                 Ты выиграл
             </div>
 
 
+
             <div class="result-prize">
+
 
                 <div
                     id="resultIcon"
@@ -322,7 +320,9 @@
                     Торговый сигнал
                 </div>
 
+
             </div>
+
 
 
             <button
@@ -334,14 +334,17 @@
             </button>
 
 
+
             <div class="result-note">
 
                 Для получения приза
-                напиши нам в Telegram
+                напиши @asya_crypto в Telegram
 
             </div>
 
+
         </div>
+
 
     </section>
 
