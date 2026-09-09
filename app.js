@@ -19,9 +19,8 @@ if (tg) {
 // SETTINGS
 // =====================================================
 
-// Сюда потом вставляется URL backend,
-// где запущен bot.py.
-const API_URL = "ВСТАВЬ_СЮДА_URL_BACKEND";
+// Backend находится на том же домене, что и сайт.
+const API_URL = window.location.origin;
 
 const CLAIM_USERNAME = "asya_crypto";
 const SPIN_TIME = 5500;
@@ -97,9 +96,7 @@ function showScreen(screen) {
         });
 
     if (screen) {
-
         screen.classList.add("active");
-
     }
 
     window.scrollTo(0, 0);
@@ -186,6 +183,7 @@ function getUser() {
         };
     }
 
+    // Обычный браузер
     return {
 
         user_id:
@@ -272,7 +270,6 @@ function startProgress() {
     if (!progressBar) return;
 
     progressBar.style.transition = "none";
-
     progressBar.style.width = "0%";
 
     void progressBar.offsetWidth;
@@ -297,7 +294,7 @@ function animateWheel() {
     if (!wheel) return;
 
     /*
-        Сектора:
+        Четыре визуальных сектора:
 
         0–90     $1,000
         90–180   ИНСТРУМЕНТЫ
@@ -306,23 +303,20 @@ function animateWheel() {
 
         Указатель находится сверху.
 
-        Центр СИГНАЛА = 315°.
-        Поэтому используем +45°.
+        Центр сектора СИГНАЛ = 315°.
+        Для остановки под указателем используем +45°.
     */
 
-    const fullSpins =
-        360 * 8;
+    const fullSpins = 360 * 8;
 
-    const signalAngle =
-        45;
+    const signalAngle = 45;
 
     const targetRotation =
         currentRotation +
         fullSpins +
         signalAngle;
 
-    wheel.style.transition =
-        "none";
+    wheel.style.transition = "none";
 
     wheel.style.transform =
         `rotate(${currentRotation}deg)`;
@@ -350,75 +344,58 @@ function animateWheel() {
 
 async function requestSpin() {
 
-    if (
-        !API_URL ||
-        API_URL.includes(
-            "ВСТАВЬ_СЮДА"
-        )
-    ) {
-
-        throw new Error(
-            "Не указан адрес backend. Нужен адрес сервера, где работает bot.py."
-        );
-
-    }
-
-    const user =
-        getUser();
+    const user = getUser();
 
     let response;
 
     try {
 
         response = await fetch(
-
-            `${API_URL.replace(/\/+$/, "")}/spin`,
-
+            `${API_URL}/spin`,
             {
-
                 method: "POST",
 
                 headers: {
-
-                    "Content-Type":
-                        "application/json"
-
+                    "Content-Type": "application/json"
                 },
 
-                body:
-                    JSON.stringify(user)
-
+                body: JSON.stringify(user)
             }
-
         );
 
     } catch (error) {
 
-        throw new Error(
-            "Не удалось подключиться к серверу. Проверь адрес backend."
-        );
+        console.error(error);
 
+        throw new Error(
+            "Не удалось подключиться к серверу."
+        );
     }
+
+
+    // =================================================
+    // RESPONSE
+    // =================================================
 
     let data;
 
     try {
 
-        data =
-            await response.json();
+        data = await response.json();
 
     } catch (e) {
 
         throw new Error(
-            "Сервер не вернул JSON. Проверь адрес backend."
+            "Сервер не вернул правильный ответ."
         );
-
     }
 
-    if (
-        !response.ok ||
-        !data.ok
-    ) {
+
+    // =================================================
+    // ERROR
+    // =================================================
+
+    if (!response.ok || !data.ok) {
 
         if (data.seconds_left) {
 
@@ -438,15 +415,18 @@ async function requestSpin() {
             throw new Error(
                 `Следующая прокрутка через ${hours} ч. ${minutes} мин.`
             );
-
         }
 
         throw new Error(
             data.error ||
-            "Не удалось запустить рулетку"
+            "Не удалось запустить рулетку."
         );
-
     }
+
+
+    // =================================================
+    // SUCCESS
+    // =================================================
 
     return data.prize;
 }
@@ -463,19 +443,21 @@ async function startSpin() {
     isSpinning = true;
 
     if (spinButton) {
-
-        spinButton.disabled =
-            true;
-
+        spinButton.disabled = true;
     }
 
     try {
 
-        // Сначала сервер проверяет
-        // возможность прокрутки.
+        /*
+            Сначала сервер проверяет,
+            можно ли пользователю крутить.
+        */
 
         const prize =
             await requestSpin();
+
+
+        // Переходим к рулетке
 
         showScreen(
             rouletteScreen
@@ -494,13 +476,15 @@ async function startSpin() {
 
         animateWheel();
 
+
+        // После окончания анимации показываем результат
+
         setTimeout(() => {
 
-            showResult(
-                prize
-            );
+            showResult(prize);
 
         }, SPIN_TIME + 150);
+
 
     } catch (error) {
 
@@ -509,17 +493,13 @@ async function startSpin() {
         isSpinning = false;
 
         if (spinButton) {
-
-            spinButton.disabled =
-                false;
-
+            spinButton.disabled = false;
         }
 
         alert(
             error.message ||
-            "Произошла ошибка"
+            "Произошла ошибка."
         );
-
     }
 }
 
@@ -532,8 +512,9 @@ function showResult(prize) {
 
     isSpinning = false;
 
-    // Фактический выигрыш:
-    // СИГНАЛ.
+    /*
+        Фактический выигрыш — СИГНАЛ.
+    */
 
     const signal = {
 
@@ -548,10 +529,12 @@ function showResult(prize) {
 
     };
 
+
     const actualPrize =
         prize?.id === "signal"
             ? prize
             : signal;
+
 
     if (resultIcon) {
 
@@ -561,6 +544,7 @@ function showResult(prize) {
 
     }
 
+
     if (resultName) {
 
         resultName.textContent =
@@ -568,6 +552,7 @@ function showResult(prize) {
             signal.name;
 
     }
+
 
     if (resultDescription) {
 
@@ -577,12 +562,14 @@ function showResult(prize) {
 
     }
 
+
     if (spinStatus) {
 
         spinStatus.textContent =
             "Готово ♡";
 
     }
+
 
     haptic("success");
 
@@ -604,6 +591,7 @@ function claimPrize() {
     const url =
         `https://t.me/${CLAIM_USERNAME}?text=${encodeURIComponent(message)}`;
 
+
     if (tg?.openTelegramLink) {
 
         tg.openTelegramLink(
@@ -617,7 +605,6 @@ function claimPrize() {
             "_blank",
             "noopener,noreferrer"
         );
-
     }
 }
 
@@ -638,7 +625,6 @@ if (spinButton) {
 
         }
     );
-
 }
 
 
@@ -657,15 +643,11 @@ if (backButton) {
             );
 
             if (spinButton) {
-
-                spinButton.disabled =
-                    false;
-
+                spinButton.disabled = false;
             }
 
         }
     );
-
 }
 
 
@@ -681,7 +663,6 @@ if (claimButton) {
 
         }
     );
-
 }
 
 
