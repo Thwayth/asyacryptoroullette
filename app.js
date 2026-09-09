@@ -192,19 +192,24 @@ function animateWheel() {
 // ==========================================
 
 function getTelegramUser() {
+
     const user = tg?.initDataUnsafe?.user;
 
-    if (!user) {
-        return null;
+    if (user) {
+        return {
+            user_id: String(user.id),
+            username: user.username || "",
+            first_name: user.first_name || ""
+        };
     }
 
+    // Если пользователь открыл рулетку по обычной ссылке
     return {
-        user_id: String(user.id),
-        username: user.username || "",
-        first_name: user.first_name || ""
+        user_id: "web-user-" + getBrowserId(),
+        username: "",
+        first_name: "Гость"
     };
 }
-
 
 // ==========================================
 // REQUEST SPIN
