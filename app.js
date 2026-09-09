@@ -11,7 +11,6 @@ if (tg) {
 }
 
 const CLAIM_USERNAME = "asya_crypto";
-
 const SPIN_TIME = 5500;
 
 let isSpinning = false;
@@ -41,32 +40,27 @@ const claimButton = document.getElementById("claimButton");
 
 
 // ==========================================
-// TELEGRAM HAPTIC
+// HAPTIC
 // ==========================================
 
 function haptic(type) {
-
     if (!tg?.HapticFeedback) return;
 
     try {
-
         if (type === "success") {
             tg.HapticFeedback.notificationOccurred("success");
         } else {
             tg.HapticFeedback.impactOccurred("medium");
         }
-
     } catch (e) {}
-
 }
 
 
 // ==========================================
-// SCREEN SWITCH
+// SCREENS
 // ==========================================
 
 function showScreen(screen) {
-
     document.querySelectorAll(".screen").forEach(item => {
         item.classList.remove("active");
     });
@@ -78,26 +72,16 @@ function showScreen(screen) {
 
 
 // ==========================================
-// WHEEL
+// WHEEL LABELS
 // ==========================================
 
 function prepareWheel() {
-
     if (!wheel) return;
 
-    // Удаляем старые динамические подписи,
-    // которые были причиной наложения.
     wheel.querySelectorAll(".wheel-label").forEach(el => {
         el.remove();
     });
 
-    // Удаляем старые сектора из HTML.
-    wheel.querySelectorAll(".wheel-sector").forEach(el => {
-        el.remove();
-    });
-
-
-    // Создаём только 4 аккуратные подписи.
     const labels = [
         {
             className: "wheel-label one",
@@ -121,9 +105,7 @@ function prepareWheel() {
         }
     ];
 
-
     labels.forEach(item => {
-
         const label = document.createElement("div");
 
         label.className = item.className;
@@ -134,7 +116,6 @@ function prepareWheel() {
         `;
 
         wheel.appendChild(label);
-
     });
 }
 
@@ -144,7 +125,6 @@ function prepareWheel() {
 // ==========================================
 
 function startProgress() {
-
     if (!progressBar) return;
 
     progressBar.style.transition = "none";
@@ -153,48 +133,49 @@ function startProgress() {
     void progressBar.offsetWidth;
 
     requestAnimationFrame(() => {
-
         progressBar.style.transition =
             `width ${SPIN_TIME}ms linear`;
 
         progressBar.style.width = "100%";
-
     });
 }
 
 
 // ==========================================
-// SPIN ANIMATION
+// WHEEL ANIMATION
 // ==========================================
 
 function animateWheel() {
-
     if (!wheel) return;
 
-    // Колесо делает 8 полных оборотов
     const fullSpins = 360 * 8;
 
-    // СИГНАЛ — сектор, на котором останавливаем рулетку.
-    // Подстрой это значение, если сектор SIGNAL расположен иначе.
-    const signalAngle = 315;
+    /*
+        Для 4 секторов:
+
+        0°   = верх
+        90°  = право
+        180° = низ
+        270° = лево
+
+        Здесь фиксируем остановку
+        на секторе СИГНАЛ.
+    */
+
+    const signalPosition = 315;
 
     const newRotation =
         currentRotation +
         fullSpins +
-        signalAngle;
-
+        signalPosition;
 
     wheel.style.transition = "none";
-
     wheel.style.transform =
         `rotate(${currentRotation}deg)`;
 
-
     void wheel.offsetWidth;
 
-
     requestAnimationFrame(() => {
-
         wheel.style.transition =
             `transform ${SPIN_TIME}ms cubic-bezier(0.12, 0.72, 0.18, 1)`;
 
@@ -202,18 +183,15 @@ function animateWheel() {
             `rotate(${newRotation}deg)`;
 
         currentRotation = newRotation;
-
     });
-
 }
 
 
 // ==========================================
-// GET USER
+// GET TELEGRAM USER
 // ==========================================
 
 function getTelegramUser() {
-
     const user = tg?.initDataUnsafe?.user;
 
     if (!user) {
@@ -233,78 +211,55 @@ function getTelegramUser() {
 // ==========================================
 
 async function requestSpin() {
-
     const user = getTelegramUser();
 
-    // В браузере вне Telegram тоже разрешаем
-    // демонстрационный запуск.
-    const payload = user || {
-        user_id: "web-demo",
-        username: "",
-        first_name: "Demo"
-    };
-
-
-    try {
-
-        const response = await fetch("/spin", {
-
-            method: "POST",
-
-            headers: {
-                "Content-Type": "application/json"
-            },
-
-            body: JSON.stringify(payload)
-
-        });
-
-
-        const data = await response.json();
-
-
-        if (!response.ok || !data.ok) {
-
-            if (data.seconds_left) {
-
-                const hours =
-                    Math.ceil(data.seconds_left / 3600);
-
-                throw new Error(
-                    `Следующая прокрутка доступна примерно через ${hours} ч.`
-                );
-
-            }
-
-            throw new Error(
-                data.error || "Не удалось запустить рулетку"
-            );
-
-        }
-
-
-        return data.prize;
-
-    } catch (error) {
-
-        console.error(error);
-
-        // Если API временно недоступен,
-        // показываем локальный результат.
-        return {
-            id: "signal",
-            name: "СИГНАЛ",
-            description: "Торговый сигнал",
-            icon: "📈"
-        };
-
+    if (!user) {
+        throw new Error(
+            "Открой рулетку через Telegram"
+        );
     }
 
+    const response = await fetch("/spin", {
+        method: "POST",
+
+        headers: {
+            "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify(user)
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+
+        if (data.seconds_left) {
+
+            const totalMinutes =
+                Math.ceil(data.seconds_left / 60);
+
+            const hours =
+                Math.floor(totalMinutes / 60);
+
+            const minutes =
+                totalMinutes % 60;
+
+            throw new Error(
+                `Следующая прокрутка через ${hours} ч. ${minutes} мин.`
+            );
+        }
+
+        throw new Error(
+            data.error || "Не удалось запустить рулетку"
+        );
+    }
+
+    return data.prize;
 }
 
 
 // ==========================================
-// START
+// START SPIN
 // ==========================================
 
 async function startSpin() {
@@ -317,29 +272,39 @@ async function startSpin() {
 
     haptic("spin");
 
-    showScreen(rouletteScreen);
+    try {
 
-    spinStatus.textContent =
-        "РУЛЕТКА КРУТИТСЯ... ♡";
+        // Сначала проверяем сервер.
+        // Если 24 часа ещё не прошли —
+        // колесо вообще не запускается.
 
-    startProgress();
+        const prize = await requestSpin();
 
-    // Запрашиваем фактический результат.
-    const prizePromise = requestSpin();
+        showScreen(rouletteScreen);
 
-    // Одновременно крутим колесо.
-    animateWheel();
+        spinStatus.textContent =
+            "РУЛЕТКА КРУТИТСЯ... ♡";
+
+        startProgress();
+
+        animateWheel();
 
 
-    // Ждём завершения анимации.
-    setTimeout(async () => {
+        setTimeout(() => {
+            showResult(prize);
+        }, SPIN_TIME + 150);
 
-        const prize = await prizePromise;
+    } catch (error) {
 
-        showResult(prize);
+        isSpinning = false;
 
-    }, SPIN_TIME + 200);
+        spinButton.disabled = false;
 
+        spinStatus.textContent =
+            "Готовы?";
+
+        alert(error.message);
+    }
 }
 
 
@@ -360,15 +325,12 @@ function showResult(prize) {
     resultDescription.textContent =
         prize.description || "Торговый сигнал";
 
-
     spinStatus.textContent =
         "Готово ♡";
-
 
     haptic("success");
 
     showScreen(resultScreen);
-
 }
 
 
@@ -379,23 +341,16 @@ function showResult(prize) {
 function claimPrize() {
 
     const message =
-        "Здравствуйте! 🎀 Я выиграла СИГНАЛ в рулетке и хочу забрать приз ♡";
-
+        "Здравствуйте! 🎀 Я получила СИГНАЛ в рулетке и хочу забрать приз ♡";
 
     const url =
         `https://t.me/${CLAIM_USERNAME}?text=${encodeURIComponent(message)}`;
 
-
     if (tg?.openTelegramLink) {
-
         tg.openTelegramLink(url);
-
     } else {
-
         window.open(url, "_blank");
-
     }
-
 }
 
 
@@ -404,22 +359,15 @@ function claimPrize() {
 // ==========================================
 
 if (spinButton) {
-
     spinButton.addEventListener("click", event => {
-
         event.preventDefault();
-
         startSpin();
-
     });
-
 }
 
 
 if (backButton) {
-
     backButton.addEventListener("click", event => {
-
         event.preventDefault();
 
         if (isSpinning) return;
@@ -427,22 +375,15 @@ if (backButton) {
         showScreen(homeScreen);
 
         spinButton.disabled = false;
-
     });
-
 }
 
 
 if (claimButton) {
-
     claimButton.addEventListener("click", event => {
-
         event.preventDefault();
-
         claimPrize();
-
     });
-
 }
 
 
