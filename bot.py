@@ -4,9 +4,15 @@ import logging
 from datetime import datetime, timezone, timedelta
 
 from aiohttp import web
+
 from aiogram import Bot, Dispatcher, Router
 from aiogram.filters import CommandStart
-from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
+from aiogram.types import (
+    Message,
+    InlineKeyboardMarkup,
+    InlineKeyboardButton,
+    WebAppInfo
+)
 
 
 logging.basicConfig(level=logging.INFO)
@@ -22,55 +28,39 @@ WEB_APP_URL = os.getenv("WEB_APP_URL")
 
 
 if not BOT_TOKEN:
-    raise RuntimeError("BOT_TOKEN не найден в Environment Variables")
+    raise RuntimeError("BOT_TOKEN не найден")
 
 if not ADMIN_CHAT_ID:
-    raise RuntimeError("ADMIN_CHAT_ID не найден в Environment Variables")
+    raise RuntimeError("ADMIN_CHAT_ID не найден")
 
 if not WEB_APP_URL:
-    raise RuntimeError("WEB_APP_URL не найден в Environment Variables")
+    raise RuntimeError("WEB_APP_URL не найден")
 
 
 router = Router()
 
-# Последние прокрутки пользователей
+
+# =========================================================
+# LAST SPINS
+# =========================================================
+
 last_spins = {}
 
 
 # =========================================================
-# VISUAL PRIZES
+# GUARANTEED PRIZE
 # =========================================================
 
-PRIZES = [
-    {
-        "id": "money",
-        "name": "$1,000",
-        "description": "Денежный приз",
-        "icon": "💵"
-    },
-    {
-        "id": "tools",
-        "name": "ИНСТРУМЕНТЫ ДЛЯ ТРЕЙДИНГА",
-        "description": "Полезные инструменты",
-        "icon": "🛠️"
-    },
-    {
-        "id": "setup",
-        "name": "ИНСАЙДЕРСКИЙ СЕТАП",
-        "description": "Торговый сетап",
-        "icon": "💎"
-    },
-    {
-        "id": "signal",
-        "name": "СИГНАЛ",
-        "description": "Торговый сигнал",
-        "icon": "📈"
-    }
-]
+SIGNAL_PRIZE = {
+    "id": "signal",
+    "name": "СИГНАЛ",
+    "description": "Торговый сигнал",
+    "icon": "📈"
+}
 
 
 # =========================================================
-# START
+# START COMMAND
 # =========================================================
 
 @router.message(CommandStart())
@@ -81,7 +71,9 @@ async def start_handler(message: Message):
             [
                 InlineKeyboardButton(
                     text="🎀 Открыть рулетку",
-                    web_app=WebAppInfo(url=WEB_APP_URL)
+                    web_app=WebAppInfo(
+                        url=WEB_APP_URL
+                    )
                 )
             ]
         ]
@@ -89,7 +81,7 @@ async def start_handler(message: Message):
 
     await message.answer(
         "🎀 ASYA CRYPTO ROULETTE\n\n"
-        "Испытай удачу и получи свой приз ✨",
+        "Получи свой гарантированный торговый сигнал ✨",
         reply_markup=keyboard
     )
 
@@ -101,7 +93,7 @@ async def start_handler(message: Message):
 async def health_handler(request):
 
     return web.Response(
-        text="ASYA CRYPTO BOT OK"
+        text="ASYA CRYPTO ROULETTE OK"
     )
 
 
@@ -137,7 +129,7 @@ async def spin_handler(request):
         return web.json_response(
             {
                 "ok": False,
-                "error": "Пользователь не определён"
+                "error": "Пользователь Telegram не определён"
             },
             status=400
         )
@@ -147,14 +139,19 @@ async def spin_handler(request):
 
 
     # =====================================================
-    # 24 HOURS LIMIT
+    # CHECK 24 HOURS
     # =====================================================
 
     previous_spin = last_spins.get(user_id)
 
+
     if previous_spin:
 
-        next_spin = previous_spin + timedelta(hours=24)
+        next_spin = (
+            previous_spin +
+            timedelta(hours=24)
+        )
+
 
         if now < next_spin:
 
@@ -173,18 +170,8 @@ async def spin_handler(request):
 
 
     # =====================================================
-    # RESULT
+    # SAVE SPIN
     # =====================================================
-
-    # Гарантированный приз
-
-    prize = next(
-        item for item in PRIZES
-        if item["id"] == "signal"
-    )
-
-
-    # Сохраняем время прокрутки
 
     last_spins[user_id] = now
 
@@ -206,8 +193,8 @@ async def spin_handler(request):
     admin_message = (
         "🎀 НОВАЯ ПРОКРУТКА\n\n"
 
-        f"🏆 Приз: {prize['name']}\n"
-        f"📝 {prize['description']}\n\n"
+        f"🏆 Приз: {SIGNAL_PRIZE['name']}\n"
+        f"📝 {SIGNAL_PRIZE['description']}\n\n"
 
         f"👤 Имя: {first_name or 'не указано'}\n"
         f"🔗 Username: {username_text}\n"
@@ -237,9 +224,7 @@ async def spin_handler(request):
     return web.json_response(
         {
             "ok": True,
-
-            "prize": prize,
-
+            "prize": SIGNAL_PRIZE,
             "next_spin_seconds": 86400
         }
     )
