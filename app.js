@@ -19,7 +19,7 @@ if (tg) {
 // SETTINGS
 // =====================================================
 
-// Backend находится на том же домене, что и сайт.
+// Backend работает на том же домене Vercel.
 const API_URL = window.location.origin;
 
 const CLAIM_USERNAME = "asya_crypto";
@@ -33,19 +33,36 @@ let currentRotation = 0;
 // ELEMENTS
 // =====================================================
 
-const homeScreen = document.getElementById("homeScreen");
-const rouletteScreen = document.getElementById("rouletteScreen");
-const resultScreen = document.getElementById("resultScreen");
+const homeScreen =
+    document.getElementById("homeScreen");
 
-const spinButton = document.getElementById("spinButton");
-const backButton = document.getElementById("backButton");
+const rouletteScreen =
+    document.getElementById("rouletteScreen");
 
-const wheel = document.getElementById("wheel");
-const spinStatus = document.getElementById("spinStatus");
-const progressBar = document.getElementById("progressBar");
+const resultScreen =
+    document.getElementById("resultScreen");
 
-const resultIcon = document.getElementById("resultIcon");
-const resultName = document.getElementById("resultName");
+const spinButton =
+    document.getElementById("spinButton");
+
+const backButton =
+    document.getElementById("backButton");
+
+const wheel =
+    document.getElementById("wheel");
+
+const spinStatus =
+    document.getElementById("spinStatus");
+
+const progressBar =
+    document.getElementById("progressBar");
+
+const resultIcon =
+    document.getElementById("resultIcon");
+
+const resultName =
+    document.getElementById("resultName");
+
 const resultDescription =
     document.getElementById("resultDescription");
 
@@ -294,17 +311,15 @@ function animateWheel() {
     if (!wheel) return;
 
     /*
-        Четыре визуальных сектора:
+        Визуальные сектора:
 
         0–90     $1,000
         90–180   ИНСТРУМЕНТЫ
         180–270  ИНСАЙДЕРСКИЙ СЕТАП
         270–360  СИГНАЛ
 
-        Указатель находится сверху.
-
-        Центр сектора СИГНАЛ = 315°.
-        Для остановки под указателем используем +45°.
+        Указатель сверху.
+        Центр СИГНАЛА = 315°.
     */
 
     const fullSpins = 360 * 8;
@@ -350,6 +365,14 @@ async function requestSpin() {
 
     try {
 
+        /*
+            ВАЖНО:
+            Запрос идёт на тот же Vercel-домен.
+
+            Например:
+            https://asyacryptoroullette.vercel.app/spin
+        */
+
         response = await fetch(
             `${API_URL}/spin`,
             {
@@ -365,7 +388,10 @@ async function requestSpin() {
 
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            "SPIN REQUEST ERROR:",
+            error
+        );
 
         throw new Error(
             "Не удалось подключиться к серверу."
@@ -385,6 +411,11 @@ async function requestSpin() {
 
     } catch (e) {
 
+        console.error(
+            "INVALID SERVER RESPONSE:",
+            e
+        );
+
         throw new Error(
             "Сервер не вернул правильный ответ."
         );
@@ -397,11 +428,24 @@ async function requestSpin() {
 
     if (!response.ok || !data.ok) {
 
-        if (data.seconds_left) {
+        /*
+            Поддерживаем оба варианта backend:
+            seconds_left
+            next_spin_seconds
+        */
+
+        const secondsLeft =
+            data.seconds_left ??
+            data.next_spin_seconds;
+
+        if (
+            secondsLeft !== undefined &&
+            secondsLeft !== null
+        ) {
 
             const totalMinutes =
                 Math.ceil(
-                    data.seconds_left / 60
+                    secondsLeft / 60
                 );
 
             const hours =
@@ -488,7 +532,10 @@ async function startSpin() {
 
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            "START SPIN ERROR:",
+            error
+        );
 
         isSpinning = false;
 
@@ -513,7 +560,7 @@ function showResult(prize) {
     isSpinning = false;
 
     /*
-        Фактический выигрыш — СИГНАЛ.
+        Фактический результат — СИГНАЛ.
     */
 
     const signal = {
@@ -530,9 +577,18 @@ function showResult(prize) {
     };
 
 
+    /*
+        Даже если backend вернул
+        неполный объект, показываем
+        корректный результат.
+    */
+
     const actualPrize =
         prize?.id === "signal"
-            ? prize
+            ? {
+                ...signal,
+                ...prize
+            }
             : signal;
 
 
