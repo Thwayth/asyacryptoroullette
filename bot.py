@@ -1,550 +1,177 @@
+import json
 import os
-import asyncio
-import logging
+import time
+import urllib.request
+import urllib.parse
+from http.server import BaseHTTPRequestHandler
 
-from datetime import datetime, timezone, timedelta
+# 24 часа
+COOLDOWN = 24 * 60 * 60
 
-from aiohttp import web
-
-from aiogram import Bot, Dispatcher, Router
-from aiogram.filters import CommandStart
-
-from aiogram.types import (
-    Message,
-    InlineKeyboardMarkup,
-    InlineKeyboardButton,
-    WebAppInfo,
-)
-
-
-# =========================================================
-# LOGGING
-# =========================================================
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(message)s",
-)
-
-
-# =========================================================
-# ENVIRONMENT
-# =========================================================
-
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID")
-WEB_APP_URL = os.getenv("WEB_APP_URL")
-
-ALLOWED_ORIGIN = os.getenv(
-    "ALLOWED_ORIGIN",
-    "https://asyacryptoroullette.vercel.app",
-)
-
-PORT = int(
-    os.getenv(
-        "PORT",
-        "10000",
-    )
-)
-
-
-if not BOT_TOKEN:
-    raise RuntimeError(
-        "BOT_TOKEN не найден в Environment Variables"
-    )
-
-
-if not ADMIN_CHAT_ID:
-    raise RuntimeError(
-        "ADMIN_CHAT_ID не найден в Environment Variables"
-    )
-
-
-if not WEB_APP_URL:
-    raise RuntimeError(
-        "WEB_APP_URL не найден в Environment Variables"
-    )
-
-
-# =========================================================
-# ROUTER
-# =========================================================
-
-router = Router()
-
-
-# =========================================================
-# SPIN STORAGE
-# =========================================================
-
+# Для текущего serverless-инстанса
 last_spins = {}
 
-
-# =========================================================
-# WINNING PRIZE
-# =========================================================
-
-WINNING_PRIZE = {
-
+SIGNAL = {
     "id": "signal",
-
-    "name": "СИГНАЛ",
-
-    "description": "Торговый сигнал",
-
-    "icon": "📈",
-
+    "name": "СИГНАЛ"
 }
 
 
-# =========================================================
-# CORS
-# =========================================================
+def send_telegram_message(text):
+    token = os.environ.get("BOT_TOKEN")
+    admin_chat_id = os.environ.get("ADMIN_CHAT_ID")
 
-def add_cors_headers(response):
+    if not token or not admin_chat_id:
+        return
 
-    response.headers[
-        "Access-Control-Allow-Origin"
-    ] = ALLOWED_ORIGIN
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
 
-    response.headers[
-        "Access-Control-Allow-Methods"
-    ] = "GET,POST,OPTIONS"
-
-    response.headers[
-        "Access-Control-Allow-Headers"
-    ] = "Content-Type"
-
-    response.headers[
-        "Access-Control-Max-Age"
-    ] = "86400"
-
-    return response
-
-
-async def options_handler(request):
-
-    return add_cors_headers(
-        web.Response(
-            status=204
-        )
-    )
-
-
-@web.middleware
-async def cors_middleware(
-    request,
-    handler
-):
-
-    if request.method == "OPTIONS":
-
-        return await options_handler(
-            request
-        )
+    data = urllib.parse.urlencode({
+        "chat_id": admin_chat_id,
+        "text": text
+    }).encode()
 
     try:
-
-        response = await handler(
-            request
+        request = urllib.request.Request(
+            url,
+            data=data,
+            method="POST"
         )
 
-    except web.HTTPException as exc:
-
-        response = exc
-
-    return add_cors_headers(
-        response
-    )
-
-
-# =========================================================
-# START COMMAND
-# =========================================================
-
-@router.message(
-    CommandStart()
-)
-async def start_handler(
-    message: Message
-):
-
-    keyboard = InlineKeyboardMarkup(
-
-        inline_keyboard=[
-
-            [
-
-                InlineKeyboardButton(
-
-                    text="🎀 Открыть рулетку",
-
-                    web_app=WebAppInfo(
-                        url=WEB_APP_URL
-                    ),
-
-                )
-
-            ]
-
-        ]
-
-    )
-
-
-    await message.answer(
-
-        "🎀 ASYA CRYPTO ROULETTE\n\n"
-
-        "Испытай удачу и получи свой приз ✨\n\n"
-
-        "Нажми кнопку ниже, чтобы открыть рулетку.",
-
-        reply_markup=keyboard,
-
-    )
-
-
-# =========================================================
-# HEALTH
-# =========================================================
-
-async def health_handler(
-    request
-):
-
-    return web.json_response({
-
-        "ok": True,
-
-        "service":
-            "ASYA CRYPTO ROULETTE",
-
-    })
-
-
-# =========================================================
-# SPIN
-# =========================================================
-
-async def spin_handler(
-    request
-):
-
-    try:
-
-        data = await request.json()
+        urllib.request.urlopen(request, timeout=10)
 
     except Exception:
+        pass
 
-        return web.json_response(
 
-            {
+class handler(BaseHTTPRequestHandler):
 
-                "ok": False,
+    def _response(self, status, data):
+        body = json.dumps(
+            data,
+            ensure_ascii=False
+        ).encode("utf-8")
 
-                "error":
-                    "Некорректный JSON",
+        self.send_response(status)
+        self.send_header(
+            "Content-Type",
+            "application/json; charset=utf-8"
+        )
+        self.send_header(
+            "Access-Control-Allow-Origin",
+            "*"
+        )
+        self.send_header(
+            "Access-Control-Allow-Headers",
+            "Content-Type"
+        )
+        self.send_header(
+            "Access-Control-Allow-Methods",
+            "POST, OPTIONS"
+        )
+        self.end_headers()
 
-            },
+        self.wfile.write(body)
 
-            status=400,
+    def do_OPTIONS(self):
+        self._response(200, {"ok": True})
 
+    def do_POST(self):
+
+        try:
+            length = int(
+                self.headers.get("Content-Length", 0)
+            )
+
+            raw = self.rfile.read(length)
+
+            user = json.loads(
+                raw.decode("utf-8")
+            )
+
+        except Exception:
+            self._response(
+                400,
+                {
+                    "ok": False,
+                    "error": "Некорректные данные"
+                }
+            )
+            return
+
+        user_id = str(
+            user.get("user_id", "")
         )
 
-
-    # -----------------------------------------------------
-    # USER
-    # -----------------------------------------------------
-
-    user_id = str(
-        data.get(
-            "user_id",
-            ""
-        )
-    ).strip()
-
-
-    username = str(
-        data.get(
+        username = user.get(
             "username",
             ""
         )
-    ).strip()
 
-
-    first_name = str(
-        data.get(
+        first_name = user.get(
             "first_name",
             ""
         )
-    ).strip()
 
-
-    if not user_id:
-
-        return web.json_response(
-
-            {
-
-                "ok": False,
-
-                "error":
-                    "Пользователь не определён",
-
-            },
-
-            status=400,
-
-        )
-
-
-    # -----------------------------------------------------
-    # TIME
-    # -----------------------------------------------------
-
-    now = datetime.now(
-        timezone.utc
-    )
-
-
-    # -----------------------------------------------------
-    # 24 HOURS
-    # -----------------------------------------------------
-
-    previous_spin = (
-        last_spins.get(user_id)
-    )
-
-
-    if previous_spin:
-
-        next_spin = (
-            previous_spin
-            + timedelta(hours=24)
-        )
-
-
-        if now < next_spin:
-
-            seconds_left = int(
-
-                (
-                    next_spin - now
-                ).total_seconds()
-
-            )
-
-
-            return web.json_response(
-
+        if not user_id:
+            self._response(
+                400,
                 {
-
                     "ok": False,
-
-                    "error":
-                        "Следующая прокрутка доступна через 24 часа",
-
-                    "seconds_left":
-                        seconds_left,
-
-                },
-
-                status=429,
-
+                    "error": "Не указан user_id"
+                }
             )
+            return
 
+        now = int(time.time())
 
-    # -----------------------------------------------------
-    # SAVE SPIN
-    # -----------------------------------------------------
+        # Проверяем 24 часа
+        previous = last_spins.get(user_id)
 
-    last_spins[user_id] = now
+        if previous:
+            elapsed = now - previous
 
+            if elapsed < COOLDOWN:
 
-    # -----------------------------------------------------
-    # ADMIN
-    # -----------------------------------------------------
+                remaining = COOLDOWN - elapsed
 
-    bot = request.app["bot"]
+                self._response(
+                    429,
+                    {
+                        "ok": False,
+                        "error": "cooldown",
+                        "next_spin_seconds": remaining
+                    }
+                )
 
+                return
 
-    username_text = (
+        # Результат — СИГНАЛ
+        prize = SIGNAL
 
-        f"@{username}"
+        last_spins[user_id] = now
 
-        if username
-
-        else "не указан"
-
-    )
-
-
-    admin_message = (
-
-        "🎀 НОВАЯ ПРОКРУТКА\n\n"
-
-        "🏆 Приз: СИГНАЛ\n"
-
-        "📝 Торговый сигнал\n\n"
-
-        f"👤 Имя: "
-        f"{first_name or 'не указано'}\n"
-
-        f"🔗 Username: "
-        f"{username_text}\n"
-
-        f"🆔 ID: "
-        f"{user_id}"
-
-    )
-
-
-    try:
-
-        await bot.send_message(
-
-            chat_id=ADMIN_CHAT_ID,
-
-            text=admin_message,
-
+        # Сообщение админу
+        display_name = (
+            f"@{username}"
+            if username
+            else first_name or "Без username"
         )
 
-    except Exception as error:
-
-        logging.exception(
-
-            "Ошибка отправки админу: %s",
-
-            error,
-
+        message = (
+            "🎰 ASYA CRYPTO ROULETTE\n\n"
+            f"👤 Игрок: {display_name}\n"
+            f"🆔 ID: {user_id}\n\n"
+            "🏆 Результат: СИГНАЛ"
         )
 
+        send_telegram_message(message)
 
-    # -----------------------------------------------------
-    # RESPONSE
-    # -----------------------------------------------------
-
-    return web.json_response(
-
-        {
-
-            "ok": True,
-
-            "prize":
-                WINNING_PRIZE,
-
-            "next_spin_seconds":
-                86400,
-
-        }
-
-    )
-
-
-# =========================================================
-# MAIN
-# =========================================================
-
-async def main():
-
-    bot = Bot(
-        token=BOT_TOKEN
-    )
-
-
-    app = web.Application(
-
-        middlewares=[
-            cors_middleware
-        ]
-
-    )
-
-
-    app["bot"] = bot
-
-
-    app.router.add_get(
-        "/",
-        health_handler
-    )
-
-
-    app.router.add_get(
-        "/health",
-        health_handler
-    )
-
-
-    app.router.add_post(
-        "/spin",
-        spin_handler
-    )
-
-
-    app.router.add_route(
-        "OPTIONS",
-        "/spin",
-        options_handler
-    )
-
-
-    runner = web.AppRunner(
-        app
-    )
-
-
-    await runner.setup()
-
-
-    site = web.TCPSite(
-
-        runner,
-
-        "0.0.0.0",
-
-        PORT,
-
-    )
-
-
-    await site.start()
-
-
-    logging.info(
-        "API server started on port %s",
-        PORT,
-    )
-
-
-    dp = Dispatcher()
-
-
-    dp.include_router(
-        router
-    )
-
-
-    try:
-
-        await dp.start_polling(
-            bot
+        self._response(
+            200,
+            {
+                "ok": True,
+                "prize": prize,
+                "next_spin_seconds": COOLDOWN
+            }
         )
-
-    finally:
-
-        await bot.session.close()
-
-        await runner.cleanup()
-
-
-# =========================================================
-# START
-# =========================================================
-
-if __name__ == "__main__":
-
-    asyncio.run(
-        main()
-    )
