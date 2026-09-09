@@ -1,17 +1,19 @@
 import os
 import asyncio
 import logging
+
 from datetime import datetime, timezone, timedelta
 
 from aiohttp import web
 
 from aiogram import Bot, Dispatcher, Router
 from aiogram.filters import CommandStart
+
 from aiogram.types import (
     Message,
     InlineKeyboardMarkup,
     InlineKeyboardButton,
-    WebAppInfo
+    WebAppInfo,
 )
 
 
@@ -20,7 +22,8 @@ from aiogram.types import (
 # =========================================================
 
 logging.basicConfig(
-    level=logging.INFO
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s",
 )
 
 
@@ -31,6 +34,18 @@ logging.basicConfig(
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID")
 WEB_APP_URL = os.getenv("WEB_APP_URL")
+
+ALLOWED_ORIGIN = os.getenv(
+    "ALLOWED_ORIGIN",
+    "https://asyacryptoroullette.vercel.app",
+)
+
+PORT = int(
+    os.getenv(
+        "PORT",
+        "10000",
+    )
+)
 
 
 if not BOT_TOKEN:
@@ -66,62 +81,93 @@ last_spins = {}
 
 
 # =========================================================
-# VISUAL PRIZES
-# =========================================================
-
-PRIZES = [
-
-    {
-        "id": "money",
-        "name": "$1,000",
-        "description": "Денежный приз",
-        "icon": "💵"
-    },
-
-    {
-        "id": "tools",
-        "name": "ИНСТРУМЕНТЫ ДЛЯ ТРЕЙДИНГА",
-        "description": "Полезные инструменты",
-        "icon": "🛠️"
-    },
-
-    {
-        "id": "setup",
-        "name": "ИНСАЙДЕРСКИЙ СЕТАП",
-        "description": "Торговый сетап",
-        "icon": "💎"
-    },
-
-    {
-        "id": "signal",
-        "name": "СИГНАЛ",
-        "description": "Торговый сигнал",
-        "icon": "📈"
-    }
-
-]
-
-
-# =========================================================
-# ACTUAL RESULT
+# WINNING PRIZE
 # =========================================================
 
 WINNING_PRIZE = {
 
     "id": "signal",
+
     "name": "СИГНАЛ",
+
     "description": "Торговый сигнал",
-    "icon": "📈"
+
+    "icon": "📈",
 
 }
 
 
 # =========================================================
-# START
+# CORS
 # =========================================================
 
-@router.message(CommandStart())
-async def start_handler(message: Message):
+def add_cors_headers(response):
+
+    response.headers[
+        "Access-Control-Allow-Origin"
+    ] = ALLOWED_ORIGIN
+
+    response.headers[
+        "Access-Control-Allow-Methods"
+    ] = "GET,POST,OPTIONS"
+
+    response.headers[
+        "Access-Control-Allow-Headers"
+    ] = "Content-Type"
+
+    response.headers[
+        "Access-Control-Max-Age"
+    ] = "86400"
+
+    return response
+
+
+async def options_handler(request):
+
+    return add_cors_headers(
+        web.Response(
+            status=204
+        )
+    )
+
+
+@web.middleware
+async def cors_middleware(
+    request,
+    handler
+):
+
+    if request.method == "OPTIONS":
+
+        return await options_handler(
+            request
+        )
+
+    try:
+
+        response = await handler(
+            request
+        )
+
+    except web.HTTPException as exc:
+
+        response = exc
+
+    return add_cors_headers(
+        response
+    )
+
+
+# =========================================================
+# START COMMAND
+# =========================================================
+
+@router.message(
+    CommandStart()
+)
+async def start_handler(
+    message: Message
+):
 
     keyboard = InlineKeyboardMarkup(
 
@@ -135,7 +181,7 @@ async def start_handler(message: Message):
 
                     web_app=WebAppInfo(
                         url=WEB_APP_URL
-                    )
+                    ),
 
                 )
 
@@ -154,7 +200,7 @@ async def start_handler(message: Message):
 
         "Нажми кнопку ниже, чтобы открыть рулетку.",
 
-        reply_markup=keyboard
+        reply_markup=keyboard,
 
     )
 
@@ -163,14 +209,16 @@ async def start_handler(message: Message):
 # HEALTH
 # =========================================================
 
-async def health_handler(request):
+async def health_handler(
+    request
+):
 
     return web.json_response({
 
         "ok": True,
 
         "service":
-            "ASYA CRYPTO ROULETTE"
+            "ASYA CRYPTO ROULETTE",
 
     })
 
@@ -179,23 +227,28 @@ async def health_handler(request):
 # SPIN
 # =========================================================
 
-async def spin_handler(request):
+async def spin_handler(
+    request
+):
 
     try:
 
-        data =
-            await request.json()
+        data = await request.json()
 
     except Exception:
 
         return web.json_response(
 
             {
+
                 "ok": False,
-                "error": "Некорректный JSON"
+
+                "error":
+                    "Некорректный JSON",
+
             },
 
-            status=400
+            status=400,
 
         )
 
@@ -205,17 +258,26 @@ async def spin_handler(request):
     # -----------------------------------------------------
 
     user_id = str(
-        data.get("user_id", "")
+        data.get(
+            "user_id",
+            ""
+        )
     ).strip()
 
 
     username = str(
-        data.get("username", "")
+        data.get(
+            "username",
+            ""
+        )
     ).strip()
 
 
     first_name = str(
-        data.get("first_name", "")
+        data.get(
+            "first_name",
+            ""
+        )
     ).strip()
 
 
@@ -224,11 +286,15 @@ async def spin_handler(request):
         return web.json_response(
 
             {
+
                 "ok": False,
-                "error": "Пользователь не определён"
+
+                "error":
+                    "Пользователь не определён",
+
             },
 
-            status=400
+            status=400,
 
         )
 
@@ -237,26 +303,26 @@ async def spin_handler(request):
     # TIME
     # -----------------------------------------------------
 
-    now =
-        datetime.now(
-            timezone.utc
-        )
+    now = datetime.now(
+        timezone.utc
+    )
 
 
     # -----------------------------------------------------
     # 24 HOURS
     # -----------------------------------------------------
 
-    previous_spin =
+    previous_spin = (
         last_spins.get(user_id)
+    )
 
 
     if previous_spin:
 
-        next_spin =
-            previous_spin + timedelta(
-                hours=24
-            )
+        next_spin = (
+            previous_spin
+            + timedelta(hours=24)
+        )
 
 
         if now < next_spin:
@@ -280,11 +346,11 @@ async def spin_handler(request):
                         "Следующая прокрутка доступна через 24 часа",
 
                     "seconds_left":
-                        seconds_left
+                        seconds_left,
 
                 },
 
-                status=429
+                status=429,
 
             )
 
@@ -300,8 +366,7 @@ async def spin_handler(request):
     # ADMIN
     # -----------------------------------------------------
 
-    bot =
-        request.app["bot"]
+    bot = request.app["bot"]
 
 
     username_text = (
@@ -320,6 +385,7 @@ async def spin_handler(request):
         "🎀 НОВАЯ ПРОКРУТКА\n\n"
 
         "🏆 Приз: СИГНАЛ\n"
+
         "📝 Торговый сигнал\n\n"
 
         f"👤 Имя: "
@@ -340,17 +406,17 @@ async def spin_handler(request):
 
             chat_id=ADMIN_CHAT_ID,
 
-            text=admin_message
+            text=admin_message,
 
         )
 
     except Exception as error:
 
-        logging.error(
+        logging.exception(
 
             "Ошибка отправки админу: %s",
 
-            error
+            error,
 
         )
 
@@ -365,10 +431,11 @@ async def spin_handler(request):
 
             "ok": True,
 
-            "prize": WINNING_PRIZE,
+            "prize":
+                WINNING_PRIZE,
 
             "next_spin_seconds":
-                86400
+                86400,
 
         }
 
@@ -381,18 +448,21 @@ async def spin_handler(request):
 
 async def main():
 
-    bot =
-        Bot(
-            token=BOT_TOKEN
-        )
+    bot = Bot(
+        token=BOT_TOKEN
+    )
 
 
-    app =
-        web.Application()
+    app = web.Application(
+
+        middlewares=[
+            cors_middleware
+        ]
+
+    )
 
 
-    app["bot"] =
-        bot
+    app["bot"] = bot
 
 
     app.router.add_get(
@@ -413,47 +483,42 @@ async def main():
     )
 
 
-    port =
-        int(
-            os.getenv(
-                "PORT",
-                "10000"
-            )
-        )
+    app.router.add_route(
+        "OPTIONS",
+        "/spin",
+        options_handler
+    )
 
 
-    runner =
-        web.AppRunner(
-            app
-        )
+    runner = web.AppRunner(
+        app
+    )
 
 
     await runner.setup()
 
 
-    site =
-        web.TCPSite(
+    site = web.TCPSite(
 
-            runner,
+        runner,
 
-            "0.0.0.0",
+        "0.0.0.0",
 
-            port
+        PORT,
 
-        )
+    )
 
 
     await site.start()
 
 
     logging.info(
-        "Server started on port %s",
-        port
+        "API server started on port %s",
+        PORT,
     )
 
 
-    dp =
-        Dispatcher()
+    dp = Dispatcher()
 
 
     dp.include_router(
