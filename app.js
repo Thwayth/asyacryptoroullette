@@ -20,7 +20,7 @@ if (tg) {
 // =====================================================
 
 // Backend работает на том же домене Vercel.
-const API_URL = window.location.origin;
+const API_URL = window.location.origin + "/api";
 
 const CLAIM_USERNAME = "asya_crypto";
 const SPIN_TIME = 5500;
