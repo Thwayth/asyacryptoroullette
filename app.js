@@ -1,3 +1,7 @@
+// =====================================================
+// ASYA CRYPTO ROULETTE — app.js
+// =====================================================
+
 const tg = window.Telegram?.WebApp || null;
 
 if (tg) {
@@ -10,19 +14,22 @@ if (tg) {
     } catch (e) {}
 }
 
-
 // =====================================================
 // SETTINGS
 // =====================================================
 
-const API_URL = "ВСТАВЬ_СЮДА_АДРЕС_СЕРВЕРА";
+// ВСТАВЬ СЮДА URL BACKEND-СЕРВЕРА,
+// где запущен bot.py.
+// Например:
+// const API_URL = "https://asya-roulette-api.onrender.com";
+
+const API_URL = "ВСТАВЬ_СЮДА_URL_BACKEND";
 
 const CLAIM_USERNAME = "asya_crypto";
 const SPIN_TIME = 5500;
 
 let isSpinning = false;
 let currentRotation = 0;
-
 
 // =====================================================
 // ELEMENTS
@@ -47,34 +54,27 @@ const resultDescription =
 const claimButton =
     document.getElementById("claimButton");
 
-
 // =====================================================
 // HAPTIC
 // =====================================================
 
 function haptic(type) {
-
     if (!tg?.HapticFeedback) return;
 
     try {
-
         if (type === "success") {
             tg.HapticFeedback.notificationOccurred("success");
         } else {
             tg.HapticFeedback.impactOccurred("medium");
         }
-
     } catch (e) {}
-
 }
-
 
 // =====================================================
 // SCREEN
 // =====================================================
 
 function showScreen(screen) {
-
     document.querySelectorAll(".screen").forEach(item => {
         item.classList.remove("active");
     });
@@ -86,117 +86,109 @@ function showScreen(screen) {
     window.scrollTo(0, 0);
 }
 
-
 // =====================================================
 // BROWSER ID
 // =====================================================
 
 function getBrowserId() {
+    let id = null;
 
-    let id =
-        localStorage.getItem("asya_roulette_browser_id");
+    try {
+        id = localStorage.getItem(
+            "asya_roulette_browser_id"
+        );
 
-    if (!id) {
+        if (!id) {
+            if (window.crypto?.randomUUID) {
+                id = "web-" + crypto.randomUUID();
+            } else {
+                id =
+                    "web-" +
+                    Date.now() +
+                    "-" +
+                    Math.random()
+                        .toString(36)
+                        .slice(2);
+            }
 
+            localStorage.setItem(
+                "asya_roulette_browser_id",
+                id
+            );
+        }
+    } catch (e) {
         id =
             "web-" +
-            crypto.randomUUID();
-
-        localStorage.setItem(
-            "asya_roulette_browser_id",
-            id
-        );
+            Date.now() +
+            "-" +
+            Math.random()
+                .toString(36)
+                .slice(2);
     }
 
     return id;
 }
-
 
 // =====================================================
 // USER
 // =====================================================
 
 function getUser() {
-
     const telegramUser =
         tg?.initDataUnsafe?.user;
 
-
-    if (telegramUser) {
-
+    if (telegramUser?.id) {
         return {
-
-            user_id:
-                String(telegramUser.id),
-
+            user_id: String(telegramUser.id),
             username:
                 telegramUser.username || "",
-
             first_name:
                 telegramUser.first_name || ""
-
         };
     }
 
-
     return {
-
-        user_id:
-            getBrowserId(),
-
+        user_id: getBrowserId(),
         username: "",
-
         first_name: "Гость"
-
     };
 }
-
 
 // =====================================================
 // WHEEL LABELS
 // =====================================================
 
 function prepareWheel() {
-
     if (!wheel) return;
-
 
     wheel
         .querySelectorAll(".wheel-label")
         .forEach(el => el.remove());
 
-
     const labels = [
-
         {
             className: "wheel-label one",
             icon: "💵",
             text: "$1,000"
         },
-
         {
             className: "wheel-label two",
             icon: "🛠️",
             text: "ИНСТРУМЕНТЫ"
         },
-
         {
             className: "wheel-label three",
             icon: "💎",
             text: "СЕТАП"
         },
-
         {
             className: "wheel-label four",
             icon: "📈",
             text: "СИГНАЛ"
         }
-
     ];
 
-
     labels.forEach(item => {
-
         const element =
             document.createElement("div");
 
@@ -207,25 +199,20 @@ function prepareWheel() {
             <span class="label-icon">
                 ${item.icon}
             </span>
-
             <span class="label-text">
                 ${item.text}
             </span>
         `;
 
         wheel.appendChild(element);
-
     });
-
 }
-
 
 // =====================================================
 // PROGRESS
 // =====================================================
 
 function startProgress() {
-
     if (!progressBar) return;
 
     progressBar.style.transition = "none";
@@ -234,74 +221,61 @@ function startProgress() {
     void progressBar.offsetWidth;
 
     requestAnimationFrame(() => {
-
         progressBar.style.transition =
             `width ${SPIN_TIME}ms linear`;
 
         progressBar.style.width = "100%";
-
     });
-
 }
-
 
 // =====================================================
 // WHEEL ANIMATION
 // =====================================================
 
 function animateWheel() {
-
     if (!wheel) return;
 
-
     /*
-        4 визуальных сектора по 90°.
+        Сектора:
 
-        Сектор СИГНАЛ находится в четвёртом
-        секторе.
+        0–90     $1,000
+        90–180   ИНСТРУМЕНТЫ
+        180–270  СЕТАП
+        270–360  СИГНАЛ
 
-        Мы НЕ выбираем случайный угол.
-        Колесо всегда заканчивает движение
-        на СИГНАЛЕ.
+        Указатель сверху.
+
+        Центр СИГНАЛА = 315°.
+        Поэтому для попадания центром
+        под указатель нужно вращение +45°.
     */
 
     const fullSpins = 360 * 8;
-
-    const signalAngle = 315;
-
+    const signalAngle = 45;
 
     const targetRotation =
         currentRotation +
         fullSpins +
         signalAngle;
 
-
     wheel.style.transition = "none";
 
     wheel.style.transform =
         `rotate(${currentRotation}deg)`;
 
-
     void wheel.offsetWidth;
 
-
     requestAnimationFrame(() => {
-
         wheel.style.transition =
             `transform ${SPIN_TIME}ms cubic-bezier(0.12, 0.72, 0.18, 1)`;
 
-
         wheel.style.transform =
             `rotate(${targetRotation}deg)`;
-
     });
-
 
     currentRotation =
         targetRotation;
-
 }
-
 
 // =====================================================
 // SERVER SPIN
@@ -309,41 +283,55 @@ function animateWheel() {
 
 async function requestSpin() {
 
+    if (
+        !API_URL ||
+        API_URL.includes("ВСТАВЬ_СЮДА")
+    ) {
+        throw new Error(
+            "Не указан API_URL. В app.js вставь адрес backend-сервера."
+        );
+    }
+
     const user = getUser();
 
+    let response;
 
-    const response = await fetch(
-        `${API_URL}/spin`,
-        {
-            method: "POST",
+    try {
+        response = await fetch(
+            `${API_URL.replace(/\/+$/, "")}/spin`,
+            {
+                method: "POST",
 
-            headers: {
-                "Content-Type": "application/json"
-            },
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
 
-            body: JSON.stringify(user)
-        }
-    );
-
+                body:
+                    JSON.stringify(user)
+            }
+        );
+    } catch (error) {
+        throw new Error(
+            "Не удалось подключиться к серверу. Проверь API_URL и доступность backend."
+        );
+    }
 
     let data;
 
-
     try {
-
         data =
             await response.json();
-
     } catch (e) {
-
         throw new Error(
-            "Сервер не вернул JSON. Проверь адрес API."
+            `Сервер не вернул JSON. Проверь адрес API: ${API_URL}`
         );
-
     }
 
-
-    if (!response.ok || !data.ok) {
+    if (
+        !response.ok ||
+        !data.ok
+    ) {
 
         if (data.seconds_left) {
 
@@ -352,22 +340,18 @@ async function requestSpin() {
                     data.seconds_left / 60
                 );
 
-
             const hours =
                 Math.floor(
                     totalMinutes / 60
                 );
 
-
             const minutes =
                 totalMinutes % 60;
-
 
             throw new Error(
                 `Следующая прокрутка через ${hours} ч. ${minutes} мин.`
             );
         }
-
 
         throw new Error(
             data.error ||
@@ -375,11 +359,8 @@ async function requestSpin() {
         );
     }
 
-
     return data.prize;
-
 }
-
 
 // =====================================================
 // START
@@ -389,41 +370,26 @@ async function startSpin() {
 
     if (isSpinning) return;
 
-
     isSpinning = true;
-
 
     if (spinButton) {
         spinButton.disabled = true;
     }
 
-
     try {
 
-        /*
-            Сначала сервер проверяет:
-            можно ли пользователю крутить.
-
-            Если 24 часа ещё не прошли,
-            колесо вообще не начинает вращение.
-        */
-
+        // Backend сначала проверяет cooldown.
         const prize =
             await requestSpin();
-
 
         showScreen(
             rouletteScreen
         );
 
-
         if (spinStatus) {
-
             spinStatus.textContent =
                 "РУЛЕТКА КРУТИТСЯ... ♡";
-
         }
-
 
         haptic("impact");
 
@@ -431,36 +397,28 @@ async function startSpin() {
 
         animateWheel();
 
-
         setTimeout(() => {
 
             showResult(prize);
 
         }, SPIN_TIME + 150);
 
-
     } catch (error) {
 
         console.error(error);
 
-
         isSpinning = false;
-
 
         if (spinButton) {
             spinButton.disabled = false;
         }
 
-
         alert(
             error.message ||
             "Произошла ошибка"
         );
-
     }
-
 }
-
 
 // =====================================================
 // RESULT
@@ -470,14 +428,7 @@ function showResult(prize) {
 
     isSpinning = false;
 
-
-    /*
-        Дополнительная защита:
-        даже если backend по ошибке вернёт
-        другой приз, интерфейс показывает
-        только СИГНАЛ.
-    */
-
+    // Фактический результат всегда СИГНАЛ.
     const signal = {
         id: "signal",
         name: "СИГНАЛ",
@@ -485,39 +436,32 @@ function showResult(prize) {
         icon: "📈"
     };
 
-
     if (resultIcon) {
         resultIcon.textContent =
             signal.icon;
     }
-
 
     if (resultName) {
         resultName.textContent =
             signal.name;
     }
 
-
     if (resultDescription) {
         resultDescription.textContent =
             signal.description;
     }
-
 
     if (spinStatus) {
         spinStatus.textContent =
             "Готово ♡";
     }
 
-
     haptic("success");
 
     showScreen(
         resultScreen
     );
-
 }
-
 
 // =====================================================
 // CLAIM
@@ -528,10 +472,8 @@ function claimPrize() {
     const message =
         "Здравствуйте! 🎀 Я получила СИГНАЛ в рулетке и хочу забрать приз ♡";
 
-
     const url =
         `https://t.me/${CLAIM_USERNAME}?text=${encodeURIComponent(message)}`;
-
 
     if (tg?.openTelegramLink) {
 
@@ -541,13 +483,11 @@ function claimPrize() {
 
         window.open(
             url,
-            "_blank"
+            "_blank",
+            "noopener,noreferrer"
         );
-
     }
-
 }
-
 
 // =====================================================
 // EVENTS
@@ -562,12 +502,9 @@ if (spinButton) {
             event.preventDefault();
 
             startSpin();
-
         }
     );
-
 }
-
 
 if (backButton) {
 
@@ -577,24 +514,18 @@ if (backButton) {
 
             event.preventDefault();
 
-
             if (isSpinning) return;
-
 
             showScreen(
                 homeScreen
             );
 
-
             if (spinButton) {
                 spinButton.disabled = false;
             }
-
         }
     );
-
 }
-
 
 if (claimButton) {
 
@@ -605,12 +536,9 @@ if (claimButton) {
             event.preventDefault();
 
             claimPrize();
-
         }
     );
-
 }
-
 
 // =====================================================
 // INIT
