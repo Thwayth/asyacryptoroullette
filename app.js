@@ -4,6 +4,11 @@
 
 const tg = window.Telegram?.WebApp || null;
 
+
+// =====================================================
+// TELEGRAM
+// =====================================================
+
 if (tg) {
     tg.ready();
     tg.expand();
@@ -19,8 +24,9 @@ if (tg) {
 // SETTINGS
 // =====================================================
 
-// Backend работает на том же домене Vercel.
-const API_URL = window.location.origin + "/api";
+// Vercel Python Function:
+// /api/index.py -> /api
+const API_URL = `${window.location.origin}/api`;
 
 const CLAIM_USERNAME = "asya_crypto";
 const SPIN_TIME = 5500;
@@ -76,7 +82,9 @@ const claimButton =
 
 function haptic(type) {
 
-    if (!tg?.HapticFeedback) return;
+    if (!tg?.HapticFeedback) {
+        return;
+    }
 
     try {
 
@@ -107,9 +115,7 @@ function showScreen(screen) {
     document
         .querySelectorAll(".screen")
         .forEach(item => {
-
             item.classList.remove("active");
-
         });
 
     if (screen) {
@@ -151,7 +157,6 @@ function getBrowserId() {
                     Math.random()
                         .toString(36)
                         .slice(2);
-
             }
 
             localStorage.setItem(
@@ -200,15 +205,16 @@ function getUser() {
         };
     }
 
-    // Обычный браузер
     return {
 
         user_id:
             getBrowserId(),
 
-        username: "",
+        username:
+            "",
 
-        first_name: "Гость"
+        first_name:
+            "Гость"
 
     };
 }
@@ -220,7 +226,9 @@ function getUser() {
 
 function prepareWheel() {
 
-    if (!wheel) return;
+    if (!wheel) {
+        return;
+    }
 
     wheel
         .querySelectorAll(".wheel-label")
@@ -266,14 +274,12 @@ function prepareWheel() {
             <span class="label-icon">
                 ${item.icon}
             </span>
-
             <span class="label-text">
                 ${item.text}
             </span>
         `;
 
         wheel.appendChild(element);
-
     });
 }
 
@@ -284,7 +290,9 @@ function prepareWheel() {
 
 function startProgress() {
 
-    if (!progressBar) return;
+    if (!progressBar) {
+        return;
+    }
 
     progressBar.style.transition = "none";
     progressBar.style.width = "0%";
@@ -297,7 +305,6 @@ function startProgress() {
             `width ${SPIN_TIME}ms linear`;
 
         progressBar.style.width = "100%";
-
     });
 }
 
@@ -308,30 +315,38 @@ function startProgress() {
 
 function animateWheel() {
 
-    if (!wheel) return;
+    if (!wheel) {
+        return;
+    }
 
     /*
-        Визуальные сектора:
+        Сектора:
 
         0–90     $1,000
         90–180   ИНСТРУМЕНТЫ
         180–270  ИНСАЙДЕРСКИЙ СЕТАП
         270–360  СИГНАЛ
 
-        Указатель сверху.
         Центр СИГНАЛА = 315°.
+        Указатель находится сверху.
+
+        Поэтому визуально доводим колесо
+        до сектора СИГНАЛ.
     */
 
-    const fullSpins = 360 * 8;
+    const fullSpins =
+        360 * 8;
 
-    const signalAngle = 45;
+    const signalAngle =
+        45;
 
     const targetRotation =
         currentRotation +
         fullSpins +
         signalAngle;
 
-    wheel.style.transition = "none";
+    wheel.style.transition =
+        "none";
 
     wheel.style.transform =
         `rotate(${currentRotation}deg)`;
@@ -345,7 +360,6 @@ function animateWheel() {
 
         wheel.style.transform =
             `rotate(${targetRotation}deg)`;
-
     });
 
     currentRotation =
@@ -359,7 +373,8 @@ function animateWheel() {
 
 async function requestSpin() {
 
-    const user = getUser();
+    const user =
+        getUser();
 
     let response;
 
@@ -367,22 +382,27 @@ async function requestSpin() {
 
         /*
             ВАЖНО:
-            Запрос идёт на тот же Vercel-домен.
 
-            Например:
-            https://asyacryptoroullette.vercel.app/spin
+            api/index.py
+            ↓
+            https://site.vercel.app/api
+
+            Поэтому запрос идёт именно на API_URL,
+            БЕЗ /spin.
         */
 
         response = await fetch(
-            `${API_URL}/spin`,
+            API_URL,
             {
                 method: "POST",
 
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type":
+                        "application/json"
                 },
 
-                body: JSON.stringify(user)
+                body:
+                    JSON.stringify(user)
             }
         );
 
@@ -407,13 +427,14 @@ async function requestSpin() {
 
     try {
 
-        data = await response.json();
+        data =
+            await response.json();
 
-    } catch (e) {
+    } catch (error) {
 
         console.error(
             "INVALID SERVER RESPONSE:",
-            e
+            error
         );
 
         throw new Error(
@@ -422,17 +443,17 @@ async function requestSpin() {
     }
 
 
+    console.log(
+        "SPIN SERVER RESPONSE:",
+        data
+    );
+
+
     // =================================================
-    // ERROR
+    // SERVER ERROR
     // =================================================
 
     if (!response.ok || !data.ok) {
-
-        /*
-            Поддерживаем оба варианта backend:
-            seconds_left
-            next_spin_seconds
-        */
 
         const secondsLeft =
             data.seconds_left ??
@@ -445,7 +466,7 @@ async function requestSpin() {
 
             const totalMinutes =
                 Math.ceil(
-                    secondsLeft / 60
+                    Number(secondsLeft) / 60
                 );
 
             const hours =
@@ -472,6 +493,13 @@ async function requestSpin() {
     // SUCCESS
     // =================================================
 
+    if (!data.prize) {
+
+        throw new Error(
+            "Сервер не прислал результат."
+        );
+    }
+
     return data.prize;
 }
 
@@ -482,7 +510,9 @@ async function requestSpin() {
 
 async function startSpin() {
 
-    if (isSpinning) return;
+    if (isSpinning) {
+        return;
+    }
 
     isSpinning = true;
 
@@ -494,14 +524,16 @@ async function startSpin() {
 
         /*
             Сначала сервер проверяет,
-            можно ли пользователю крутить.
+            разрешена ли прокрутка.
         */
 
         const prize =
             await requestSpin();
 
 
-        // Переходим к рулетке
+        // ---------------------------------------------
+        // ROULETTE
+        // ---------------------------------------------
 
         showScreen(
             rouletteScreen
@@ -511,7 +543,6 @@ async function startSpin() {
 
             spinStatus.textContent =
                 "РУЛЕТКА КРУТИТСЯ... ♡";
-
         }
 
         haptic("impact");
@@ -521,14 +552,15 @@ async function startSpin() {
         animateWheel();
 
 
-        // После окончания анимации показываем результат
+        // ---------------------------------------------
+        // RESULT
+        // ---------------------------------------------
 
         setTimeout(() => {
 
             showResult(prize);
 
         }, SPIN_TIME + 150);
-
 
     } catch (error) {
 
@@ -560,7 +592,7 @@ function showResult(prize) {
     isSpinning = false;
 
     /*
-        Фактический результат — СИГНАЛ.
+        Реальный результат всегда СИГНАЛ.
     */
 
     const signal = {
@@ -573,14 +605,15 @@ function showResult(prize) {
             "Торговый сигнал",
 
         icon: "📈"
-
     };
 
 
     /*
-        Даже если backend вернул
-        неполный объект, показываем
-        корректный результат.
+        Если backend прислал signal —
+        используем его данные.
+
+        Если нет —
+        всё равно показываем СИГНАЛ.
     */
 
     const actualPrize =
@@ -597,7 +630,6 @@ function showResult(prize) {
         resultIcon.textContent =
             actualPrize.icon ||
             signal.icon;
-
     }
 
 
@@ -606,7 +638,6 @@ function showResult(prize) {
         resultName.textContent =
             actualPrize.name ||
             signal.name;
-
     }
 
 
@@ -615,7 +646,6 @@ function showResult(prize) {
         resultDescription.textContent =
             actualPrize.description ||
             signal.description;
-
     }
 
 
@@ -623,9 +653,7 @@ function showResult(prize) {
 
         spinStatus.textContent =
             "Готово ♡";
-
     }
-
 
     haptic("success");
 
@@ -692,7 +720,9 @@ if (backButton) {
 
             event.preventDefault();
 
-            if (isSpinning) return;
+            if (isSpinning) {
+                return;
+            }
 
             showScreen(
                 homeScreen
